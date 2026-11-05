@@ -85,7 +85,35 @@
         }
       ],
       "ready_after": "role=button[name=/Start the conversation/]",
-      "alt": "The New spec form: the request to remind members two days before a hold expires, the fernleaf-library project folder chosen, the three kinds of work (Build something new selected, Fix a bug, Quick plan) and the Start the conversation button"
+      "alt": "The New spec form: the request to remind members by email two days before a hold waiting on the shelf expires, the fernleaf-library project folder chosen, the unticked Work in a fresh worktree option, the three kinds of work (Build something new selected, Fix a bug, Quick plan) and the Start the conversation button"
+    },
+    {
+      "name": "use-case-bug",
+      "path": "/apps/spec-builder",
+      "themes": [
+        "light"
+      ],
+      "live": true,
+      "steps": [
+        {
+          "click": "role=button[name=/^saturday-pickup-deadline/] >> nth=0"
+        },
+        {
+          "wait_for": "role=button[name='Approve → Design']",
+          "click_meanwhile": "role=button[name=/^\\s*Trust$/]",
+          "timeout_ms": 900000
+        },
+        {
+          "wait_hidden": "role=button[name='Stop generation']",
+          "timeout_ms": 600000
+        },
+        {
+          "wait_ms": 2000
+        }
+      ],
+      "ready_after": "role=button[name='Approve → Design']",
+      "settle_ms": 2000,
+      "alt": "A Fix a bug spec for the wrong last pickup day on a Saturday hold: the requirements document is the agent's investigation (a summary of the symptom and where the behaviour lives in fernleaf/holds.py), the conversation explains the cause it found, that the deadline is an exact time seven days after the copy came back while the message names only the day, and two questions wait under Decisions with the answers it recommends"
     },
     {
       "name": "hero",
@@ -112,7 +140,7 @@
       ],
       "ready_after": "role=button[name=/Start building/]",
       "settle_ms": 1500,
-      "alt": "Spec Builder with a finished plan: the specs list on the left, the conversation with the spec agent in the middle, and the Tasks document on the right with its numbered task list, progress bar and the Start building button"
+      "alt": "Spec Builder with a finished plan: the specs list on the left with a planned reminder spec and a bug spec, the conversation with the spec agent in the middle ending with the five steps it wrote, and on the right the Tasks document's task progress (0 of 14 tasks done) with a Run button per task, the Start building button, and the two decisions it asked about, answered"
     },
     {
       "name": "use-case-feature",
@@ -138,7 +166,7 @@
       ],
       "ready_after": "role=radio[name='Requirements'][checked=true]",
       "settle_ms": 1500,
-      "alt": "The requirements document the agent wrote for the hold reminder, beside the conversation in which it explained what it wrote, with the decisions it asked about shown under the document"
+      "alt": "The requirements document the agent wrote for the hold reminder, marked Approved: its introduction explains how holds expire today and what the reminder adds, and below it are the two decisions the agent asked about (whether a late check still sends the reminder, and whether the email names the book by ISBN or title), both answered"
     },
     {
       "name": "use-case-review",
@@ -182,41 +210,7 @@
       ],
       "ready_after": "role=button[name='Send all to agent']",
       "settle_ms": 1200,
-      "alt": "Reviewing the design document: a sentence in it is highlighted and a review comment asking what happens when a member has no email address is stacked in the tray, ready to send to the agent with Send all to agent"
-    },
-    {
-      "name": "use-case-bug",
-      "path": "/apps/spec-builder",
-      "themes": [
-        "light"
-      ],
-      "live": true,
-      "steps": [
-        {
-          "click": "role=button[name=/^saturday-pickup-deadline/] >> nth=0"
-        },
-        {
-          "wait_for": "role=button[name=/Trust/]",
-          "timeout_ms": 300000
-        },
-        {
-          "click": "role=button[name=/Trust/] >> nth=0"
-        },
-        {
-          "wait_for": "role=button[name='Approve → Design']",
-          "timeout_ms": 900000
-        },
-        {
-          "wait_hidden": "role=button[name='Stop generation']",
-          "timeout_ms": 600000
-        },
-        {
-          "wait_ms": 2000
-        }
-      ],
-      "ready_after": "role=button[name='Approve → Design']",
-      "settle_ms": 2000,
-      "alt": "A Fix a bug spec for the wrong pickup day on a Saturday hold: the agent's investigation in the requirements document, with what it found in the project's holds code, next to its summary in the conversation"
+      "alt": "Reviewing the design document: a review comment on its first sentence, asking what happens when a member has no email address on file, is stacked in the tray under the document, ready to send to the agent with Send all to agent"
     }
   ],
   "walkthrough": {
@@ -282,7 +276,8 @@
       {
         "wait_for": "role=button[name='Approve → Design']",
         "timeout_ms": 900000,
-        "cut": true
+        "cut": true,
+        "click_meanwhile": "role=button[name=/^\\s*Trust$/]"
       },
       {
         "wait_hidden": "role=button[name='Stop generation']",

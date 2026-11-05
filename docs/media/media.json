@@ -1,0 +1,112 @@
+{
+  "app": "spec-builder",
+  "captured_at": "2026-11-05T01:48:11Z",
+  "app_commit": "2dca68d9c33e37562b1ce050992122f45763d755",
+  "kirocrew_commit": "55439d87700799a8789a341da65e2e1c355e26fc",
+  "kirocrew_tree_dirty": true,
+  "gateway": "isolated temporary home, approval=reads; a freshly seeded gateway for the stub screenshots and one for the walkthrough, whose live run the live screenshots were then taken on",
+  "data": "fictional, seeded through the app's HTTP API (capture/scenes.json)",
+  "agent_backend": {
+    "live": [
+      "hero",
+      "use-case-bug",
+      "use-case-feature",
+      "use-case-review",
+      "walkthrough"
+    ],
+    "live_model": "the operator's own installed, signed-in kiro-cli over ACP with model \"auto\"; the replies on screen are that model's and vary from run to run",
+    "stub": "Kiro Crew's offline stub ACP backend (capture/stub_backend.py) for every other scene; no chat reply is shown from it",
+    "credit_reading": "the browser answers the top bar's credit readout (/api/sessions/usage) with \"no reading\", so no account balance or email can be shown"
+  },
+  "note": "The isolated gateway served this repository's own copy of the app: capture.py's setup installed it from this checkout (POST /api/apps/install), trusted it and enabled it, and every picture shows its committed bundle (ui/dist/index.mjs) and backend. Kiro Crew still ships a built-in spec-builder and refuses a second install under the same name, so the Kiro Crew tree the capture ran on is the App Kit level-1 commit the tests pin, with only the built-in copy removed (src/kiro_crew/apps/builtins/spec_builder and its BUILTIN_NAMES row); kirocrew_tree_dirty records that. The folder picker's first listing (the gateway user's home folder) was sent to the demo projects folder instead, so no real home folder appears; the app answered that listing as it answers any folder.",
+  "data_notes": [
+    "The project is a made-up library holds service (Fernleaf Library, capture/fixtures/fernleaf-library), copied for each gateway to /tmp/spec-builder-demo/fernleaf-library and committed there by a fictional author. Every name and the .example email addresses in it are invented.",
+    "The specs were created through the app's own New spec form (the walkthrough) and its POST /specs route (the bug spec), so the agent's first message, its questions and every document came from a live model and differ from run to run.",
+    "The agent's tool calls were approved with the chat's own Trust button, as a person would."
+  ],
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "device_scale": 2,
+  "screenshots": [
+    {
+      "file": "hero-dark.png",
+      "name": "hero",
+      "theme": "dark",
+      "bytes": 432445,
+      "width": 1600,
+      "height": 1000,
+      "alt": "Spec Builder with a finished plan: the specs list on the left with a planned reminder spec and a bug spec, the conversation with the spec agent in the middle ending with the five steps it wrote, and on the right the Tasks document's task progress (0 of 14 tasks done) with a Run button per task, the Start building button, and the two decisions it asked about, answered"
+    },
+    {
+      "file": "hero-light.png",
+      "name": "hero",
+      "theme": "light",
+      "bytes": 403901,
+      "width": 1600,
+      "height": 1000,
+      "alt": "Spec Builder with a finished plan: the specs list on the left with a planned reminder spec and a bug spec, the conversation with the spec agent in the middle ending with the five steps it wrote, and on the right the Tasks document's task progress (0 of 14 tasks done) with a Run button per task, the Start building button, and the two decisions it asked about, answered"
+    },
+    {
+      "file": "start-light.png",
+      "name": "start",
+      "theme": "light",
+      "bytes": 227254,
+      "width": 1600,
+      "height": 1000,
+      "alt": "The New spec form: the request to remind members by email two days before a hold waiting on the shelf expires, the fernleaf-library project folder chosen, the unticked Work in a fresh worktree option, the three kinds of work (Build something new selected, Fix a bug, Quick plan) and the Start the conversation button"
+    },
+    {
+      "file": "use-case-bug-light.png",
+      "name": "use-case-bug",
+      "theme": "light",
+      "bytes": 426436,
+      "width": 1600,
+      "height": 1000,
+      "alt": "A Fix a bug spec for the wrong last pickup day on a Saturday hold: the requirements document is the agent's investigation (a summary of the symptom and where the behaviour lives in fernleaf/holds.py), the conversation explains the cause it found, that the deadline is an exact time seven days after the copy came back while the message names only the day, and two questions wait under Decisions with the answers it recommends"
+    },
+    {
+      "file": "use-case-feature-light.png",
+      "name": "use-case-feature",
+      "theme": "light",
+      "bytes": 453141,
+      "width": 1600,
+      "height": 1000,
+      "alt": "The requirements document the agent wrote for the hold reminder, marked Approved: its introduction explains how holds expire today and what the reminder adds, and below it are the two decisions the agent asked about (whether a late check still sends the reminder, and whether the email names the book by ISBN or title), both answered"
+    },
+    {
+      "file": "use-case-review-light.png",
+      "name": "use-case-review",
+      "theme": "light",
+      "bytes": 417048,
+      "width": 1600,
+      "height": 1000,
+      "alt": "Reviewing the design document: a review comment on its first sentence, asking what happens when a member has no email address on file, is stacked in the tray under the document, ready to send to the agent with Send all to agent"
+    }
+  ],
+  "walkthrough": {
+    "shortened_waits_s": [
+      11.2,
+      26.4,
+      7.1,
+      5.0,
+      29.9,
+      4.1,
+      19.7,
+      3.5
+    ],
+    "mp4": {
+      "file": "walkthrough.mp4",
+      "bytes": 1376093
+    },
+    "gif": {
+      "file": "walkthrough.gif",
+      "bytes": 6719560,
+      "width": 880,
+      "fps": 8
+    },
+    "theme": "light",
+    "alt": "A walkthrough of Spec Builder: starting a spec to remind library members before a hold expires in the fernleaf-library project, trusting the agent's tool calls, the agent writing the requirements and asking questions, answering one with a click, approving the requirements so it writes the design, approving the design so it writes the task list, and the task list with its Start building button"
+  }
+}

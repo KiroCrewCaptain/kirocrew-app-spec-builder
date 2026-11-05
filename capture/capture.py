@@ -841,6 +841,19 @@ def run_steps(
             locate(page, step["press"]).press(step.get("key", "Enter"))
         elif "select" in step:
             move_to(page, step["select"], animate).select_option(step.get("value"))
+        elif "wait_for" in step and "click_meanwhile" in step:
+            # Wait for ``wait_for``, pressing ``click_meanwhile`` whenever it shows
+            # up on the way: a live agent may ask for a tool approval more than
+            # once, and how often depends on the run.
+            deadline = time.monotonic() + int(step.get("timeout_ms", 15_000)) / 1000
+            target, extra = locate(page, step["wait_for"]), locate(page, step["click_meanwhile"])
+            while not target.is_visible():
+                if time.monotonic() > deadline:
+                    raise CaptureError(f"timed out waiting for {step['wait_for']!r}")
+                if extra.is_visible():
+                    with contextlib.suppress(Exception):
+                        move_to(page, step["click_meanwhile"], animate).click(timeout=5_000)
+                page.wait_for_timeout(1000)
         elif "wait_for" in step:
             locate(page, step["wait_for"]).wait_for(
                 state="visible", timeout=int(step.get("timeout_ms", 15_000))

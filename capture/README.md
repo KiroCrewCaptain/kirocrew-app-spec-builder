@@ -101,10 +101,12 @@ python capture/capture.py --kirocrew /path/to/KiroCrew
 python capture/capture.py --kirocrew /path/to/KiroCrew --only screenshots --shot hero
 python capture/capture.py --kirocrew /path/to/KiroCrew --only walkthrough
 python capture/capture.py --kirocrew /path/to/KiroCrew --serve    # explore, captures nothing
+python capture/capture.py --kirocrew /path/to/KiroCrew --serve --serve-live   # the same, on the live model
 ```
 
 `--serve` boots and seeds, prints a sign-in URL and waits for Enter: use it to
-find selectors while writing `scenes.json`. The URL is loopback only and its
+find selectors while writing `scenes.json` (`--serve-live` runs that gateway on
+your kiro-cli, to try a live scene's waits). The URL is loopback only and its
 token dies with the gateway.
 
 ## Which copy of the app is photographed
@@ -126,32 +128,36 @@ no machine-specific path goes into `scenes.json`:
 
 This app's `scenes.json` runs those steps in `setup`, so the pictures show this
 repository's bundle and backend, not the built-in copy. While Kiro Crew still
-ships a built-in `auto-research`, the install step is refused on a stock
-checkout (`app 'auto-research' is already installed`), so capture on a Kiro
-Crew tree that carries App Kit level 1 with only the built-in's registration
-removed. Kiro Crew's gateway still imports one module of the built-in at boot
-(`session_keys.py`, see PORTING.md gap 2), so its Python files stay; only its
-manifest, its package entry and its `BUILTIN_NAMES` row go:
+ships a built-in `spec-builder`, the install step is refused on a stock
+checkout (`app 'spec-builder' is already installed`), so capture on a Kiro
+Crew tree that carries App Kit level 1 with the built-in copy removed. Nothing
+in Kiro Crew imports the built-in at boot, so its whole package and its
+`BUILTIN_NAMES` row go:
 
 ```bash
 git clone --shared --no-checkout /path/to/KiroCrew /tmp/kc-capture
 git -C /tmp/kc-capture checkout --detach <level-1 commit>
 cd /tmp/kc-capture
-git rm -q src/kiro_crew/apps/builtins/auto_research/app.json \
-          src/kiro_crew/apps/builtins/auto_research/__init__.py
-printf '"""Kept importable for the gateway; not registered."""\n' \
-  > src/kiro_crew/apps/builtins/auto_research/__init__.py
-sed -i '/^    "auto_research",$/d' src/kiro_crew/apps/builtins/__init__.py
+git rm -rq src/kiro_crew/apps/builtins/spec_builder
+sed -i '/^    "spec_builder",$/d' src/kiro_crew/apps/builtins/__init__.py
 # then build and stage the dashboard as above, and pass --kirocrew /tmp/kc-capture
 ```
 
 `media.json` then records `kirocrew_tree_dirty: true`. Say which copy was
 photographed in `"provenance_note"`, which is copied into `media.json`.
 
-A campaign is driven by the live research agent, so the live scenes wait for
-real research cycles (`wait_for` with a long `timeout_ms`, and `"cut": true` in
-the recording). Expect a live run to take tens of minutes and to use some of
-your Kiro credits.
+Spec Builder works on a project folder, so `scenes.json` names one under
+`"projects"`: the made-up Fernleaf Library service in
+`capture/fixtures/fernleaf-library/`, copied fresh for each gateway to
+`<temp>/spec-builder-demo/fernleaf-library` and committed there as a git
+repository by a fictional author. Its folder picker starts in the gateway
+user's home folder, which would show that machine's real folder names;
+`"browse_start"` sends that first listing to the demo projects folder instead.
+Every chat is the live spec agent, so the live scenes wait for real turns
+(`wait_for` with a long `timeout_ms`, and `"cut": true` in the recording) and
+press the chat's own **Trust** button whenever the agent asks for a tool
+approval (`"click_meanwhile"`). Expect a live run to take a quarter of an hour
+and to use some of your Kiro credits.
 
 ## `scenes.json` reference
 
@@ -167,6 +173,8 @@ your Kiro credits.
 | `data_notes` | List of facts about the demo data a reader of `media.json` should know (for example, dates the app stamps itself) |
 | `settle_hidden` | Extra selectors that must be gone before a frame is taken (`.animate-spin` always is) |
 | `theme_api` | Override for the theme switch call (default `PUT /api/config/theme {"mode": "{{theme}}"}`) |
+| `projects` | Project folders the app works on: `name`, `from` (a directory in this repository), `git` (make it a repository with one commit). Each is copied fresh for every gateway and is the variable `{{project_<name>}}` (dashes become underscores) |
+| `browse_start` | `{"api": ..., "param": ...}`: the first listing of a folder picker (the call whose `param` is empty) is sent to the projects folder instead of the gateway user's home |
 | `setup` | Ordered HTTP calls: `method`, `path`, `body`, `expect` (status list), `save` (`{"var": "dotted.path.in.response"}`), `optional`, `passes` (run only on these gateways: `screenshots`, `screenshots-live`, `walkthrough`, or `after-walkthrough`, a second round on the walkthrough's gateway once it is recorded); or `{"wait_ms": n}` |
 | `live_stills_from_walkthrough` | `true`: take the `live` screenshots on the walkthrough's gateway after the recording (with `--only all`), so the stills and the recording show the same live run instead of two runs of a model that answers differently |
 | `screenshots` | List of shots (below) |
@@ -199,7 +207,7 @@ after every live capture.
 | `{"type": SEL, "value": "...", "delay_ms": 45}` | Type visibly, key by key |
 | `{"press": SEL, "key": "Enter"}` | Press a key in an element |
 | `{"select": SEL, "value": "..."}` | Choose in a native `<select>` |
-| `{"wait_for": SEL}` / `{"wait_hidden": SEL}` | Wait for an element to appear / go (`timeout_ms`, default 15000). Add `"cut": true` to shorten that wait in the recording to `cut_keep_ms` (default 700), e.g. while an agent "thinks" |
+| `{"wait_for": SEL}` / `{"wait_hidden": SEL}` | Wait for an element to appear / go (`timeout_ms`, default 15000). Add `"cut": true` to shorten that wait in the recording to `cut_keep_ms` (default 700), e.g. while an agent "thinks". With `"click_meanwhile": SEL2`, `wait_for` also presses SEL2 each time it shows up while waiting (a tool approval a live agent may ask for more than once) |
 | `{"wait_reply": true}` | Wait until the open chat's agent has finished its next turn, read from the gateway's own record of the chat (`timeout_ms`, default 300000). Add `"cut": true` to shorten the wait in the recording |
 | `{"scroll_reply": "start"}` | If the newest reply is taller than the screen, scroll back so its start is visible below the pinned prompt (`margin` px, default 12) |
 | `{"wait_ms": 800}` | Pause (only to let a viewer read, never as a barrier) |
