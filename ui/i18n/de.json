@@ -1,0 +1,238 @@
+{
+  "apps": {
+    "specBuilder": {
+      "api": {
+        "phase_building": "wird umgesetzt",
+        "phase_design": "design",
+        "phase_new": "gerade gestartet",
+        "phase_ready": "fertig",
+        "phase_requirements": "anforderungen",
+        "phase_tasks": "plan fertig",
+        "something_went_wrong": "Etwas ist schiefgelaufen ({{status}})"
+      },
+      "components": {
+        "chatColumn": {
+          "reply_to_the_spec_agent": "Dem Spec-Agenten antworten…"
+        },
+        "columnSplitter": {
+          "drag_or_use_to_resize": "Ziehen oder ← → verwenden, um die Größe zu ändern"
+        },
+        "docView": {
+          "add_comment": "Kommentar hinzufügen",
+          "comment": "Kommentieren",
+          "comment_on_the_selected_passage": "Die markierte Passage kommentieren",
+          "discard_this_comment": "Diesen Kommentar verwerfen",
+          "document_file_name": "{{name}}.md",
+          "empty_design": "Noch kein Design. Sobald Sie die Anforderungen in der Unterhaltung freigeben, landet das technische Design hier.",
+          "empty_requirements": "Noch keine Anforderungen geschrieben — beschreiben Sie in der Unterhaltung, was Sie möchten, und der Agent entwirft dieses Dokument.",
+          "empty_tasks": "Noch keine Aufgabenliste. Nachdem Sie das Design freigegeben haben, landet die geordnete Aufgabenliste hier.",
+          "nothing_here_yet": "Hier ist noch nichts.",
+          "your_feedback_on_the_passage_in": "Ihr Feedback zur markierten Passage in {{document}}",
+          "your_feedback_on_this_passage_enter_adds_it_to_t": "Ihr Feedback zu dieser Passage… (Enter fügt es dem Stapel hinzu)"
+        },
+        "newSpecView": {
+          "describe_what_you_want_to_do": "Beschreiben Sie, was Sie vorhaben",
+          "e_g_add_login_with_google_so_users_don_t_need_pa": "z. B. „Login mit Google hinzufügen, damit Nutzer keine Passwörter brauchen“ oder „Der Export-Button stürzt bei großen Dateien ab“",
+          "fresh_worktree_option_pick_a_project_folder_abov": "Option für ein frisches Worktree: Wählen Sie oben einen Projektordner — wenn es ein Git-Repository ist, kann ich in einem eigenen Worktree planen und bauen.",
+          "keeps_your_main_checkout_untouched_branch": "Lässt Ihren Haupt-Checkout unberührt: Ich erstelle einen Branch {{branch}} in einem eigenen Ordner neben dem Repository und plane und baue dort.",
+          "let_s_plan_something": "Planen wir etwas",
+          "never_mind": "Abbrechen",
+          "settings": "Einstellungen",
+          "start_the_conversation": "Unterhaltung beginnen →",
+          "starting": "Wird gestartet…",
+          "tell_me_what_you_have_in_mind_i_ll_ask_a_few_cla": "Sagen Sie mir, was Sie vorhaben. Ich stelle im Chat einige klärende Fragen, schreibe einen Plan, den Sie prüfen können, und baue ihn dann, wenn Sie bereit sind.",
+          "this_folder_isn_t_a_git_repository_so_i_ll_work": "Dieser Ordner ist kein Git-Repository, daher arbeite ich direkt darin. Wählen Sie ein Git-Repository, um die Option eines frischen Worktrees zu erhalten.",
+          "this_spec_will_be_called": "Diese Spezifikation heißt {{name}}",
+          "type_bug_blurb": "Das Problem untersuchen, die Ursache finden und die Behebung planen.",
+          "type_bug_title": "Einen Fehler beheben",
+          "type_feature_blurb": "Ein vollständiger Plan: Anforderungen, technisches Design und eine Aufgabenliste.",
+          "type_feature_title": "Etwas Neues bauen",
+          "type_quick_blurb": "Ohne Formalitäten — nur ein Ziel und eine Aufgabenliste.",
+          "type_quick_title": "Schneller Plan",
+          "what_do_you_want_to_do": "Was möchten Sie tun?",
+          "what_kind_of_work_is_it": "Um welche Art von Arbeit handelt es sich?",
+          "which_project_is_this_for": "Für welches Projekt ist das?",
+          "work_in_a_fresh_worktree": "In einem frischen Worktree arbeiten",
+          "your_plan_is_saved_as_plain_markdown_inside_your": "Ihr Plan wird als einfaches Markdown in Ihrem Projekt gespeichert (.kiro/specs) und funktioniert damit auch mit der Kiro IDE und der CLI. Wo Specs gespeichert werden, ändern Sie unter"
+        },
+        "projectPicker": {
+          "browse": "Durchsuchen",
+          "change": "ändern",
+          "choose_a_project_folder": "Projektordner auswählen…",
+          "choose_a_project_folder_aria": "Projektordner auswählen",
+          "go_to_parent_folder": "Zum übergeordneten Ordner",
+          "hide_path_input": "Pfadeingabe ausblenden",
+          "home_you_projects_my_app": "/home/you/projects/my-app",
+          "loading": "Wird geladen…",
+          "no_subfolders_here_use_use_this_folder_above_to": "Keine Unterordner hier — verwenden Sie oben „Diesen Ordner verwenden“, um diesen zu wählen.",
+          "open_folder": "Ordner {{name}} öffnen",
+          "project_folder_change": "Projektordner: {{path}} — ändern",
+          "project_folder_path": "Pfad des Projektordners",
+          "recent_projects": "Zuletzt verwendete Projekte",
+          "type_a_path_instead": "Stattdessen einen Pfad eingeben",
+          "up": "Nach oben",
+          "use_recent_project": "Zuletzt verwendetes Projekt {{path}} verwenden",
+          "use_this_folder": "Diesen Ordner verwenden",
+          "use_this_folder_path": "Diesen Ordner verwenden: {{path}}",
+          "load_failed": "Dieser Ordner konnte nicht aufgelistet werden",
+          "load_failed_unknown": "Das Lesen ist ohne Angabe eines Grundes fehlgeschlagen.",
+          "retry": "Erneut versuchen"
+        },
+        "settingsModal": {
+          "cancel": "Abbrechen",
+          "couldn_t_load_these_settings": "Diese Einstellungen konnten nicht geladen werden – Speichern ist erst möglich, wenn sie geladen sind.",
+          "couldn_t_save_these_settings": "Diese Einstellungen konnten nicht gespeichert werden.",
+          "default_keeps_the_model_your_chat_agent_resolves": "Standard übernimmt das Modell, das dein Chat-Agent ohnehin auflöst. Eine Auswahl gilt für Spec-Sitzungen, die nach der Änderung starten — eine bereits laufende Spec behält ihr aktuelles Modell.",
+          "empty_keep_specs_with_each_project_recommended": "Leer = Specs beim jeweiligen Projekt behalten (empfohlen)",
+          "leave_this_empty_to_keep_specs_inside_each_proje": "Lassen Sie dies leer, um Specs in jedem Projekt zu behalten (ein Ordner .kiro/specs neben Ihrem Code — der Kiro-Standard). Oder geben Sie einen Ordnerpfad an, um alle Specs an einem Ort zu sammeln.",
+          "model_default_inherit": "Standard (übernehmen)",
+          "save": "Speichern",
+          "saving": "Wird gespeichert…",
+          "settings": "Einstellungen",
+          "spec_generation_model": "Modell für die Spec-Erstellung",
+          "spec_storage_folder_path": "Ordnerpfad für die Spec-Ablage",
+          "where_should_specs_be_saved": "Wo sollen Specs gespeichert werden?",
+          "which_model_should_run_spec_generation": "Welches Modell soll die Spec-Erstellung ausführen?"
+        },
+        "shimmer": {
+          "loading_specs": "Specs werden geladen…",
+          "loading_the_conversation": "Unterhaltung wird geladen…",
+          "writing_this_document": "Dieses Dokument wird geschrieben…"
+        },
+        "specDetail": {
+          "advance_to_design": "Freigeben → Design",
+          "advance_to_tasks": "Freigeben → Aufgaben",
+          "an_agent_will_work_through_the_task_list": "Ein Agent arbeitet die Aufgabenliste ab",
+          "approved": "Freigegeben",
+          "approved_by_user": "Freigegeben von {{user}}",
+          "archive_this_spec": "Diese Spec archivieren",
+          "cancel": "Abbrechen",
+          "changed_since_approval": "Seit der Freigabe geändert",
+          "clear": "Leeren",
+          "close_esc": "Schließen (Esc)",
+          "close_review_view": "Prüfansicht schließen",
+          "couldn_t_remove_this_spec_try_again": "Diese Spezifikation konnte nicht entfernt werden – bitte erneut versuchen.",
+          "delete_spec_named": "Spezifikation {{name}} entfernen",
+          "delete_this_spec": "Diese Spezifikation entfernen",
+          "document_file_name": "{{name}}.md",
+          "drafting_design": "Design wird erstellt…",
+          "drafting_tasks": "Aufgaben werden erstellt…",
+          "drag_or_use_to_resize": "Ziehen oder ← → verwenden, um die Größe zu ändern",
+          "duplicate_this_spec": "Diese Spec duplizieren",
+          "expand_document_for_review": "Dokument zur Prüfung vergrößern",
+          "expand_for_review_esc_to_close": "Zur Prüfung vergrößern (Esc schließt)",
+          "name_for_the_copy": "Name für die Kopie",
+          "pause": "Pausieren",
+          "pausing": "Wird pausiert…",
+          "pending_comment_one": "{{count}} offener Kommentar",
+          "pending_comment_other": "{{count}} offene Kommentare",
+          "remove_comment_on": "Kommentar zu {{document}} entfernen",
+          "remove_spec_body": "„{{name}}“ verlässt Spec Builder. Die Markdown-Dateien bleiben im Projekt, und jeder laufende Agent für diese Spezifikation wird gestoppt.",
+          "remove_this_spec": "Diese Spezifikation entfernen?",
+          "removing": "Wird entfernt…",
+          "rename_this_spec_label_the_folder_name_stays": "Benenne die Bezeichnung dieser Spec um. Ordner- und Branch-Name bleiben gleich.",
+          "resize_document_panel": "Größe des Dokumentbereichs ändern",
+          "restore_this_spec": "Diese Spec wiederherstellen",
+          "review_document_named": "{{document}}.md für {{name}} prüfen",
+          "send_all_to_agent": "Alle an den Agenten senden",
+          "sending": "Wird gesendet…",
+          "spec_label": "Spec-Bezeichnung",
+          "start_building": "Umsetzung starten",
+          "starting": "Wird gestartet…",
+          "tab_design": "Design",
+          "tab_requirements": "Anforderungen",
+          "tab_tasks": "Aufgaben",
+          "tells_the_agent_this_phase_is_approved_and_to_mo": "Hält deine Freigabe dieser Version fest und sagt dem Agenten dann, dass er weitermachen soll",
+          "the_agent_is_writing_the_next_document": "Genehmigt — der Agent schreibt das nächste Dokument",
+          "this_document_changed_after_it_was_approved": "Dieses Dokument hat sich nach der Freigabe geändert",
+          "working": "arbeitet…"
+        },
+        "specRail": {
+          "active": "AKTIV",
+          "agent_working": "Agent arbeitet",
+          "an_agent_is_working": "Ein Agent arbeitet",
+          "filter_specs": "Specs filtern",
+          "filter_specs_by_name": "Specs nach Namen filtern",
+          "new_spec": "Neue Spec",
+          "plan_ready": "PLAN FERTIG",
+          "settings": "Einstellungen",
+          "show_spec_list": "Spec-Liste anzeigen",
+          "show_specs": "Specs anzeigen",
+          "spec_builder": "Spec Builder",
+          "spec_builder_settings": "Spec Builder-Einstellungen",
+          "specs": "SPECS",
+          "v": "v"
+        },
+        "specStatePanel": {
+          "answer_option": "„{{title}}“ mit {{option}} beantworten",
+          "answer_option_recommended": "„{{title}}“ mit {{option}} beantworten (empfohlen)",
+          "answered": "beantwortet",
+          "blocking": "BLOCKIEREND",
+          "context": "KONTEXT",
+          "decision_title": "Entscheidung — {{title}}",
+          "decisions": "ENTSCHEIDUNGEN",
+          "options_for": "Optionen für {{title}}",
+          "pending": "offen",
+          "recommended": "EMPFOHLEN",
+          "sending": "wird gesendet…",
+          "template": "Vorlage",
+          "tool_calls": "Tool-Aufrufe",
+          "turns": "Runden",
+          "worktree": "Worktree"
+        },
+        "taskList": {
+          "done": "Fertig",
+          "no_tasks_yet": "Noch keine Aufgaben. Sobald das Design freigegeben ist, landet die geordnete Aufgabenliste hier und du kannst Aufgaben einzeln ausführen.",
+          "pause_the_build_first": "Pausiere die Umsetzung, bevor du eine einzelne Aufgabe ausführst",
+          "run": "Ausführen",
+          "run_only_this_task_and_stop": "Nur diese Aufgabe ausführen und dann anhalten",
+          "run_task": "Aufgabe ausführen: {{task}}",
+          "starting": "Wird gestartet…",
+          "task_progress": "Aufgabenfortschritt",
+          "done_of_total_one": "{{done}} von {{total}} Aufgabe fertig",
+          "done_of_total_other": "{{done}} von {{total}} Aufgaben fertig"
+        },
+        "workspace": {
+          "describe_what_you_want_to_build_answer_a_few_que": "Beschreiben Sie, was Sie bauen möchten, beantworten Sie einige Fragen und erhalten Sie einen geprüften Plan — Anforderungen, Design und Aufgaben — den ein Agent umsetzen kann.",
+          "pick_a_spec_to_continue_where_you_left_off": "Wählen Sie eine Spec, um dort weiterzumachen, wo Sie aufgehört haben",
+          "plan_your_next_feature_with_a_spec": "Planen Sie Ihr nächstes Feature mit einer Spec",
+          "resize_spec_list": "Größe der Spec-Liste ändern",
+          "start_your_first_spec": "Erstellen Sie Ihre erste Spec"
+        }
+      },
+      "manifest": {
+        "description": "Spec-getriebene Entwicklung in Kiro Crew: Verwandle eine Feature-Idee mit einem eingebetteten Agenten in Anforderungen → Design → Aufgaben, prüfe das Markdown direkt in der App und übergib den freigegebenen Plan dann an eine autonome Ausführungssitzung.",
+        "display_name": "Spec Builder",
+        "page_label": "Spec Builder",
+        "use_case_1": "Verwandle ein Feature, einen Fehler oder eine kurze Aufgabe in überprüfbare, Repository-bezogene Anforderungen, ein Design und Umsetzungsschritte.",
+        "configuration_1": "Wähle einen Projektordner und den Modus Feature, Bug oder Quick, erstelle optional einen neuen Worktree und prüfe und genehmige dann jede erzeugte Phase, bevor du den Build startest."
+      },
+      "specBuilderPage": {
+        "spec_builder": "Spec Builder",
+        "talk_through_an_idea_review_the_plan_then_let_an": "Besprechen Sie eine Idee, prüfen Sie den Plan und lassen Sie dann einen Agenten sie umsetzen."
+      }
+    },
+    "issueRadar": {
+      "components": {
+        "detailOverflowMenu": {
+          "more_actions": "Weitere Aktionen"
+        }
+      }
+    },
+    "meetings": {
+      "review": {
+        "archivedSection": "Archiviert"
+      }
+    }
+  },
+  "components": {
+    "ui": {
+      "no_noun_match": "Keine passenden {{noun}}",
+      "no_matches_for": "Keine Treffer für",
+      "clear_filter": "Filter löschen"
+    },
+    "resizeHandle": {
+      "drag_to_resize": "Ziehen zum Ändern der Größe"
+    }
+  }
+}

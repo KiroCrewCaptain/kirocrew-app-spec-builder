@@ -1,0 +1,121 @@
+{
+  "name": "spec-builder",
+  "version": "0.1.0",
+  "displayName": "Spec Builder",
+  "description": "Spec-driven development inside Kiro Crew: turn a feature idea into Requirements → Design → Tasks with an embedded agent, review the markdown in-app, then hand the approved plan off to an autonomous execution session.",
+  "author": "kirocrew",
+  "license": "Apache-2.0",
+  "minKiroCrewVersion": "0.13.0",
+  "tags": [
+    "specs",
+    "kiro",
+    "planning",
+    "workflow",
+    "developer-tools"
+  ],
+  "defaultEnabled": false,
+  "platform": {
+    "os": [
+      "macos",
+      "linux",
+      "windows"
+    ]
+  },
+  "permissions": {
+    "api": [
+      "/api/apps/spec-builder",
+      "/api/apps/spec-builder/*",
+      "/api/chat",
+      "/api/chat/*"
+    ],
+    "storage": true
+  },
+  "backend": {
+    "hooks": {
+      "routes": "backend.routes:register_routes"
+    }
+  },
+  "skills": [
+    "skills/spec-workflow"
+  ],
+  "ui": {
+    "entry": "dist/index.mjs",
+    "pages": [
+      {
+        "route": "/apps/spec-builder",
+        "label": "Spec Builder"
+      }
+    ]
+  },
+  "iconPath": "assets/icon.png",
+  "heroImage": "assets/hero-light.png",
+  "heroImageDark": "assets/hero-dark.png",
+  "heroImageDetail": "assets/hero-detail-light.png",
+  "heroImageDetailDark": "assets/hero-detail-dark.png",
+  "useCases": [
+    "Turn a feature, bug, or quick task into reviewable repository-aware requirements, design, and implementation steps."
+  ],
+  "configuration": [
+    "Choose a project folder and Feature, Bug, or Quick mode, optionally create a fresh worktree, then review and approve each generated stage before starting the build."
+  ],
+  "screenshots": [
+    "assets/screenshot-main.png"
+  ],
+  "l10n": {
+    "bn": {
+      "displayName": "Spec Builder",
+      "description": "Kiro Crew-এর ভিতরে spec-নির্ভর ডেভেলপমেন্ট: অন্তর্নির্মিত একজন এজেন্টের সঙ্গে মিলে একটি ফিচারের ভাবনাকে চাহিদা → ডিজাইন → কাজ — এই তিন ধাপে রূপ দাও, অ্যাপেই markdown পর্যালোচনা করো, তারপর অনুমোদিত পরিকল্পনাটি একটি স্বায়ত্তশাসিত এক্সিকিউশন সেশনের হাতে তুলে দাও।",
+      "pageLabel": "Spec Builder"
+    },
+    "de": {
+      "displayName": "Spec Builder",
+      "description": "Spec-getriebene Entwicklung in Kiro Crew: Verwandle eine Feature-Idee mit einem eingebetteten Agenten in Anforderungen → Design → Aufgaben, prüfe das Markdown direkt in der App und übergib den freigegebenen Plan dann an eine autonome Ausführungssitzung.",
+      "pageLabel": "Spec Builder"
+    },
+    "es": {
+      "displayName": "Spec Builder",
+      "description": "Desarrollo basado en especificaciones dentro de Kiro Crew: convierte una idea de función en Requisitos → Diseño → Tareas con un agente integrado, revisa el markdown en la propia app y luego entrega el plan aprobado a una sesión de ejecución autónoma.",
+      "pageLabel": "Spec Builder"
+    },
+    "fr": {
+      "displayName": "Spec Builder",
+      "description": "Développement piloté par les spécifications au sein de Kiro Crew : transforme une idée de fonctionnalité en Exigences → Conception → Tâches avec un agent intégré, relis le markdown dans l’application, puis confie le plan approuvé à une session d’exécution autonome.",
+      "pageLabel": "Spec Builder"
+    },
+    "hi": {
+      "displayName": "Spec Builder",
+      "description": "Kiro Crew के भीतर spec-आधारित डेवलपमेंट: किसी फ़ीचर के आइडिया को एक अंतर्निहित एजेंट के साथ आवश्यकताएं → डिज़ाइन → कार्य में बदलो, ऐप के भीतर ही markdown की समीक्षा करो, और फिर स्वीकृत योजना को किसी स्वायत्त निष्पादन सेशन को सौंप दो।",
+      "pageLabel": "Spec Builder"
+    },
+    "it": {
+      "displayName": "Spec Builder",
+      "description": "Sviluppo guidato dalle spec dentro Kiro Crew: trasforma l’idea di una funzionalità in Requisiti → Progettazione → Attività con un agente integrato, rivedi il markdown nell’app e poi affida il piano approvato a una sessione di esecuzione autonoma.",
+      "pageLabel": "Spec Builder"
+    },
+    "ja": {
+      "displayName": "Spec Builder",
+      "description": "Kiro Crew内でのスペック駆動開発：機能のアイデアを「要件 → デザイン → タスク」に変換。組み込みエージェント付き、アプリ内でMarkdownを確認し、承認済みプランを自動実行セッションに引き渡します。",
+      "pageLabel": "Spec Builder"
+    },
+    "ko": {
+      "displayName": "Spec Builder",
+      "description": "Kiro Crew 안에서의 스펙 주도 개발: 내장 에이전트와 함께 기능 아이디어를 요구사항 → 설계 → 작업으로 바꾸고, 앱 안에서 Markdown을 검토한 뒤 승인된 계획을 자율 실행 세션으로 넘깁니다.",
+      "pageLabel": "Spec Builder"
+    },
+    "pt": {
+      "displayName": "Spec Builder",
+      "description": "Desenvolvimento orientado a specs dentro do Kiro Crew: transforme a ideia de um recurso em Requisitos → Design → Tarefas com um agente integrado, revise o markdown no próprio app e depois entregue o plano aprovado a uma sessão de execução autônoma.",
+      "pageLabel": "Spec Builder"
+    },
+    "ru": {
+      "displayName": "Spec Builder",
+      "description": "Разработка через спецификации внутри Kiro Crew: превращай идею функции в Требования → Дизайн → Задачи с помощью встроенного агента, просматривай markdown прямо в приложении, а затем передавай утверждённый план автономной сессии выполнения.",
+      "pageLabel": "Spec Builder"
+    },
+    "zh-CN": {
+      "displayName": "Spec Builder",
+      "description": "在 Kiro Crew 内进行 spec 驱动开发：借助内嵌代理把一个功能想法变成需求 → 设计 → 任务，在应用内审阅 markdown，然后把已通过的方案交给一个自主执行会话去完成。",
+      "pageLabel": "Spec Builder"
+    }
+  }
+}

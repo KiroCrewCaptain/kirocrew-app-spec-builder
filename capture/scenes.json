@@ -1,0 +1,384 @@
+{
+  "app": "spec-builder",
+  "fixture": "minimal",
+  "locale": "en-US",
+  "timezone": "UTC",
+  "init_storage": {
+    "mc-nav": "0"
+  },
+  "ready": "text=Spec Builder",
+  "projects": [
+    {
+      "name": "fernleaf-library",
+      "from": "capture/fixtures/fernleaf-library",
+      "git": true
+    }
+  ],
+  "setup": [
+    {
+      "name": "install this repository",
+      "method": "POST",
+      "path": "/api/apps/install",
+      "body": {
+        "source": "{{app_root}}"
+      }
+    },
+    {
+      "name": "trust it (it runs its own code)",
+      "method": "POST",
+      "path": "/api/security/trusted-apps/spec-builder"
+    },
+    {
+      "name": "turn the app on",
+      "method": "POST",
+      "path": "/api/apps/spec-builder/enable"
+    },
+    {
+      "name": "retire the host's one-time startup intro",
+      "method": "POST",
+      "path": "/api/feature-videos/feedback",
+      "body": {
+        "id": "crewmates",
+        "status": "dismissed"
+      },
+      "optional": true
+    },
+    {
+      "name": "a bug spec the live agent investigates (after the walkthrough)",
+      "method": "POST",
+      "path": "/api/apps/spec-builder/specs",
+      "body": {
+        "name": "saturday-pickup-deadline",
+        "working_dir": "{{project_fernleaf_library}}",
+        "spec_type": "bug",
+        "description": "When a hold becomes ready on a Saturday, the pickup message names the wrong last day",
+        "use_worktree": false
+      },
+      "passes": [
+        "after-walkthrough"
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "start",
+      "path": "/apps/spec-builder",
+      "themes": [
+        "light"
+      ],
+      "steps": [
+        {
+          "click": "role=button[name='New spec'] >> nth=0"
+        },
+        {
+          "fill": "textarea",
+          "value": "Remind members by email two days before a hold waiting on the shelf expires"
+        },
+        {
+          "click": "role=button[name='Choose a project folder']"
+        },
+        {
+          "click": "role=button[name='Open folder fernleaf-library']"
+        },
+        {
+          "click": "role=button[name=/Use this folder/]"
+        }
+      ],
+      "ready_after": "role=button[name=/Start the conversation/]",
+      "alt": "The New spec form: the request to remind members two days before a hold expires, the fernleaf-library project folder chosen, the three kinds of work (Build something new selected, Fix a bug, Quick plan) and the Start the conversation button"
+    },
+    {
+      "name": "hero",
+      "path": "/apps/spec-builder",
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "live": true,
+      "steps": [
+        {
+          "click": "role=button[name=/^remind-members/] >> nth=0"
+        },
+        {
+          "wait_for": "role=radio[name='Tasks']",
+          "timeout_ms": 30000
+        },
+        {
+          "click": "role=radio[name='Tasks']"
+        },
+        {
+          "wait_ms": 1500
+        }
+      ],
+      "ready_after": "role=button[name=/Start building/]",
+      "settle_ms": 1500,
+      "alt": "Spec Builder with a finished plan: the specs list on the left, the conversation with the spec agent in the middle, and the Tasks document on the right with its numbered task list, progress bar and the Start building button"
+    },
+    {
+      "name": "use-case-feature",
+      "path": "/apps/spec-builder",
+      "themes": [
+        "light"
+      ],
+      "live": true,
+      "steps": [
+        {
+          "click": "role=button[name=/^remind-members/] >> nth=0"
+        },
+        {
+          "wait_for": "role=radio[name='Requirements']",
+          "timeout_ms": 30000
+        },
+        {
+          "click": "role=radio[name='Requirements']"
+        },
+        {
+          "wait_ms": 1500
+        }
+      ],
+      "ready_after": "role=radio[name='Requirements'][checked=true]",
+      "settle_ms": 1500,
+      "alt": "The requirements document the agent wrote for the hold reminder, beside the conversation in which it explained what it wrote, with the decisions it asked about shown under the document"
+    },
+    {
+      "name": "use-case-review",
+      "path": "/apps/spec-builder",
+      "themes": [
+        "light"
+      ],
+      "live": true,
+      "steps": [
+        {
+          "click": "role=button[name=/^remind-members/] >> nth=0"
+        },
+        {
+          "wait_for": "role=radio[name='Design']",
+          "timeout_ms": 30000
+        },
+        {
+          "click": "role=radio[name='Design']"
+        },
+        {
+          "wait_ms": 1500
+        },
+        {
+          "select_text": ".sb-doc p >> nth=0"
+        },
+        {
+          "click": "role=button[name='Comment on the selected passage']"
+        },
+        {
+          "type": "role=textbox[name=/Your feedback on the selected passage/]",
+          "value": "Also say what happens when the member has no email address on file.",
+          "delay_ms": 0
+        },
+        {
+          "press": "role=textbox[name=/Your feedback on the selected passage/]",
+          "key": "Enter"
+        },
+        {
+          "wait_ms": 800
+        }
+      ],
+      "ready_after": "role=button[name='Send all to agent']",
+      "settle_ms": 1200,
+      "alt": "Reviewing the design document: a sentence in it is highlighted and a review comment asking what happens when a member has no email address is stacked in the tray, ready to send to the agent with Send all to agent"
+    },
+    {
+      "name": "use-case-bug",
+      "path": "/apps/spec-builder",
+      "themes": [
+        "light"
+      ],
+      "live": true,
+      "steps": [
+        {
+          "click": "role=button[name=/^saturday-pickup-deadline/] >> nth=0"
+        },
+        {
+          "wait_for": "role=button[name=/Trust/]",
+          "timeout_ms": 300000
+        },
+        {
+          "click": "role=button[name=/Trust/] >> nth=0"
+        },
+        {
+          "wait_for": "role=button[name='Approve → Design']",
+          "timeout_ms": 900000
+        },
+        {
+          "wait_hidden": "role=button[name='Stop generation']",
+          "timeout_ms": 600000
+        },
+        {
+          "wait_ms": 2000
+        }
+      ],
+      "ready_after": "role=button[name='Approve → Design']",
+      "settle_ms": 2000,
+      "alt": "A Fix a bug spec for the wrong pickup day on a Saturday hold: the agent's investigation in the requirements document, with what it found in the project's holds code, next to its summary in the conversation"
+    }
+  ],
+  "walkthrough": {
+    "name": "walkthrough",
+    "theme": "light",
+    "path": "/apps/spec-builder",
+    "live": true,
+    "alt": "A walkthrough of Spec Builder: starting a spec to remind library members before a hold expires in the fernleaf-library project, trusting the agent's tool calls, the agent writing the requirements and asking questions, answering one with a click, approving the requirements so it writes the design, approving the design so it writes the task list, and the task list with its Start building button",
+    "tail_ms": 4000,
+    "steps": [
+      {
+        "caption": "Spec Builder: describe a change, review the plan, then build it",
+        "position": "bottom"
+      },
+      {
+        "wait_ms": 1800
+      },
+      {
+        "click": "role=button[name='New spec'] >> nth=0"
+      },
+      {
+        "caption": ""
+      },
+      {
+        "type": "textarea",
+        "value": "Remind members by email two days before a hold waiting on the shelf expires",
+        "delay_ms": 16
+      },
+      {
+        "click": "role=button[name='Choose a project folder']"
+      },
+      {
+        "click": "role=button[name='Open folder fernleaf-library']"
+      },
+      {
+        "click": "role=button[name=/Use this folder/]"
+      },
+      {
+        "wait_ms": 900
+      },
+      {
+        "click": "role=button[name=/Start the conversation/]"
+      },
+      {
+        "caption": "The spec agent reads the project first; Trust lets it keep working",
+        "position": "top"
+      },
+      {
+        "wait_for": "role=button[name=/Trust/]",
+        "timeout_ms": 300000,
+        "cut": true
+      },
+      {
+        "wait_ms": 1500
+      },
+      {
+        "click": "role=button[name=/Trust/] >> nth=0"
+      },
+      {
+        "caption": "It writes requirements.md and asks its open questions",
+        "position": "top"
+      },
+      {
+        "wait_for": "role=button[name='Approve → Design']",
+        "timeout_ms": 900000,
+        "cut": true
+      },
+      {
+        "wait_hidden": "role=button[name='Stop generation']",
+        "timeout_ms": 600000,
+        "cut": true
+      },
+      {
+        "wait_ms": 3500
+      },
+      {
+        "caption": "Answer a question with one click",
+        "position": "top"
+      },
+      {
+        "click": "role=button[name=/^Answer .*\\(recommended\\)/] >> nth=0"
+      },
+      {
+        "wait_ms": 4000
+      },
+      {
+        "wait_hidden": "role=button[name='Stop generation']",
+        "timeout_ms": 600000,
+        "cut": true
+      },
+      {
+        "wait_ms": 1500
+      },
+      {
+        "caption": "Approve the requirements: the agent drafts the design",
+        "position": "top"
+      },
+      {
+        "click": "role=button[name='Approve → Design']"
+      },
+      {
+        "wait_for": "role=button[name='Approve → Tasks']",
+        "timeout_ms": 900000,
+        "cut": true
+      },
+      {
+        "wait_hidden": "role=button[name='Stop generation']",
+        "timeout_ms": 600000,
+        "cut": true
+      },
+      {
+        "wait_ms": 3000
+      },
+      {
+        "caption": "Approve the design: the agent writes the task list",
+        "position": "top"
+      },
+      {
+        "click": "role=button[name='Approve → Tasks']"
+      },
+      {
+        "wait_for": "role=button[name=/Start building/]",
+        "timeout_ms": 900000,
+        "cut": true
+      },
+      {
+        "wait_hidden": "role=button[name='Stop generation']",
+        "timeout_ms": 600000,
+        "cut": true
+      },
+      {
+        "click": "role=radio[name='Tasks']"
+      },
+      {
+        "caption": "Start building hands the reviewed task list to an agent",
+        "position": "top"
+      },
+      {
+        "mouse_park": [
+          1430,
+          890
+        ]
+      },
+      {
+        "wait_ms": 4000
+      }
+    ]
+  },
+  "browse_start": {
+    "api": "/api/apps/spec-builder/browse",
+    "param": "path"
+  },
+  "provenance_note": "The isolated gateway served this repository's own copy of the app: capture.py's setup installed it from this checkout (POST /api/apps/install), trusted it and enabled it, and every picture shows its committed bundle (ui/dist/index.mjs) and backend. Kiro Crew still ships a built-in spec-builder and refuses a second install under the same name, so the Kiro Crew tree the capture ran on is the App Kit level-1 commit the tests pin, with only the built-in copy removed (src/kiro_crew/apps/builtins/spec_builder and its BUILTIN_NAMES row); kirocrew_tree_dirty records that. The folder picker's first listing (the gateway user's home folder) was sent to the demo projects folder instead, so no real home folder appears; the app answered that listing as it answers any folder.",
+  "live_stills_from_walkthrough": true,
+  "data_notes": [
+    "The project is a made-up library holds service (Fernleaf Library, capture/fixtures/fernleaf-library), copied for each gateway to /tmp/spec-builder-demo/fernleaf-library and committed there by a fictional author. Every name and the .example email addresses in it are invented.",
+    "The specs were created through the app's own New spec form (the walkthrough) and its POST /specs route (the bug spec), so the agent's first message, its questions and every document came from a live model and differ from run to run.",
+    "The agent's tool calls were approved with the chat's own Trust button, as a person would."
+  ],
+  "forbid_text": [
+    "Couldn’t load",
+    "Access denied",
+    "redaction is not available"
+  ]
+}

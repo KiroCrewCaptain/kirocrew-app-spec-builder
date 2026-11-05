@@ -1,0 +1,6 @@
+[flake8]
+max-line-length = 100
+# The built-in's code and tests were written to Kiro Crew's flake8 settings
+# (black-formatted, so E203/W503 conflict with it; long literals are allowed).
+extend-ignore = E203, W503, E501
+exclude = .git,__pycache__,ui/node_modules
