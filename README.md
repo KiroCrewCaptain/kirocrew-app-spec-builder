@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/media/hero-dark.png">
-  <img src="docs/media/hero-light.png" alt="Spec Builder with a finished plan: the specs list on the left with a planned reminder spec and a bug spec, the conversation with the spec agent in the middle ending with the five steps it wrote, and on the right the Tasks document's task progress (0 of 14 tasks done) with a Run button per task, the Start building button, and the two decisions it asked about, answered">
+  <img src="docs/media/hero-light.png" alt="Spec Builder with a finished plan: the specs list on the left with a planned reminder spec and a bug spec, the conversation with the spec agent in the middle ending with the eight tasks it wrote, and on the right the Tasks document's task progress (0 of 16 tasks done) with a Run button per task, the Start building button, and the two decisions it asked about, answered">
 </picture>
 
 **Plan a change with an agent before it writes any code: requirements, design, then tasks.**
@@ -20,8 +20,8 @@ documents you review on the same page: **Requirements**, **Design** and
 when the task list is right, **Start building** hands it to an agent that works
 through it.
 
-**Get started:** open **Apps → Library**, show the disabled apps, and choose
-**Enable** on **Spec Builder** (see [Install](#install)).
+**Get started:** open **Apps → Library**, find **Spec Builder** under
+**Disabled**, and choose **Enable** (see [Install](#install)).
 
 ## The problem it solves
 
@@ -47,7 +47,7 @@ something new**. The agent reads the code, writes `requirements.md` and puts
 the questions it could not answer from the code under **Decisions**, each with
 the option it recommends; one click answers one.
 
-![The requirements document the agent wrote for the hold reminder, marked Approved: its introduction explains how holds expire today and what the reminder adds, and below it are the two decisions the agent asked about (whether a late check still sends the reminder, and whether the email names the book by ISBN or title), both answered](docs/media/use-case-feature-light.png)
+![The requirements document the agent wrote for the hold reminder, marked Approved: its introduction explains how holds expire today and what the reminder adds, and below it are the two decisions the agent asked about (whether a late check still sends the reminder, and whether the two-day lead time is a fixed constant), both answered](docs/media/use-case-feature-light.png)
 
 ### 2. Track down a bug before fixing it
 
@@ -56,7 +56,7 @@ Choose **Fix a bug** instead: the agent's first document is an investigation
 (the symptom, how to reproduce it, the root cause it found in the code) rather
 than a feature description, and the design and tasks that follow are the fix.
 
-![A Fix a bug spec for the wrong last pickup day on a Saturday hold: the requirements document is the agent's investigation (a summary of the symptom and where the behaviour lives in fernleaf/holds.py), the conversation explains the cause it found, that the deadline is an exact time seven days after the copy came back while the message names only the day, and two questions wait under Decisions with the answers it recommends](docs/media/use-case-bug-light.png)
+![A Fix a bug spec for the wrong last pickup day on a Saturday hold: the requirements document is the agent's bug investigation (a summary of where the ready message and the expiry live in fernleaf/holds.py and fernleaf/notify.py), the conversation explains the cause it found, that the hold is removed at 10:00 seven days later while the message names only the day, and its one question, what the last day to collect should be, waits under Decisions with the answer it recommends](docs/media/use-case-bug-light.png)
 
 ### 3. Review a document like a pull request
 
@@ -74,7 +74,7 @@ Tasks**) moves the spec on.
 
 [Watch the walkthrough as a video (MP4)](docs/media/walkthrough.mp4).
 
-<sub>Recorded from a real Kiro Crew (`55439d8770`, the App Kit level-1 commit, with only the built-in copy removed) on a throwaway home, running this repository's own copy of the app on a made-up project, the Fernleaf Library holds service. The reminder spec was started through the app's page in the recording, and the stills above were taken on the same gateway right after it, so they show the same run; the bug spec was created through the app's own route on that gateway. The agent's messages, questions and documents came from a live model, so they will differ on every run, and its tool calls were allowed with the chat's own Trust button. The waits for the agent were shortened (about two minutes in all). The folder picker's first listing was pointed at the demo projects folder so no real home folder appears. Start building is shown but not run.</sub>
+<sub>Recorded from a real Kiro Crew (`55439d8770`, the App Kit level-1 commit, with only the built-in copy removed) on a throwaway home, running this repository's own copy of the app on a made-up project, the Fernleaf Library holds service. The reminder spec was started through the app's page in the recording, and the stills above were taken on the same gateway right after it, so they show the same run; the bug spec was created through the app's own route on that gateway. The agent's messages, questions and documents came from a live model, so they will differ on every run, and its tool calls were allowed with the chat's own Trust button. The waits for the agent were shortened (by 118 seconds in all). The folder picker's first listing was pointed at the demo projects folder so no real home folder appears. Start building is shown but not run.</sub>
 
 ## Install
 
@@ -82,7 +82,7 @@ Tasks**) moves the spec on.
 starts switched off:
 
 1. In Kiro Crew, open **Apps → Library** in the left sidebar.
-2. Choose **Show N disabled apps** (N is how many apps are switched off).
+2. Scroll to the **Disabled** section, below the apps that are switched on.
 3. On the **Spec Builder** tile, open the **⋯** menu and choose **Enable**.
 4. **Spec Builder** now appears under **Apps** in the sidebar.
 
@@ -169,8 +169,12 @@ page open.
 - **Turn it off:** **Apps → Library**, open the **⋯** menu on Spec Builder,
   choose **Disable**. Your specs, documents and conversations are kept.
 - **Remove it** (once it is installed from the App Store): the same menu,
-  **Uninstall**. The documents in your projects and the conversations are kept.
-  The copy that comes with Kiro Crew can be switched off but not removed.
+  **Uninstall**. Everything is kept: the documents in your projects, the
+  conversations, the list of specs, the settings and the recorded answers.
+  Even purging the app's data (`--purge-data`, under Development) deletes none
+  of these, because none of them is in the app's own folder; delete the two
+  paths above yourself if you want them gone. The copy that comes with Kiro Crew can be switched off but not
+  removed.
 
 ## Troubleshooting / FAQ
 
@@ -253,8 +257,13 @@ so **Enable** opens **Trust “Spec Builder” to run its own code?**, and **Tru
 this app and enable** does both. `kirocrew app enable spec-builder` is refused
 with `app_execution_denied` until the app is trusted.
 `kirocrew app disable spec-builder` turns it off;
-`kirocrew app uninstall spec-builder` keeps the data and adding
-`--purge-data` deletes it.
+`kirocrew app uninstall spec-builder` removes the app. Neither touches your
+data: the list of specs, the settings and the recorded answers live outside
+the app's own folder (see [Settings & data](#settings--data)), so
+`--purge-data`, which deletes only that folder's `data/`, deletes none of them
+either. To remove them, delete `~/.kiro/crew/workspace/spec-builder/` and
+`~/.kiro/crew/trust/spec-builder-decisions.json` yourself, and the
+`.kiro/specs/<name>/` folders in your projects if you want those gone too.
 
 ### Tests
 

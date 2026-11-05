@@ -113,7 +113,7 @@
       ],
       "ready_after": "role=button[name='Approve → Design']",
       "settle_ms": 2000,
-      "alt": "A Fix a bug spec for the wrong last pickup day on a Saturday hold: the requirements document is the agent's investigation (a summary of the symptom and where the behaviour lives in fernleaf/holds.py), the conversation explains the cause it found, that the deadline is an exact time seven days after the copy came back while the message names only the day, and two questions wait under Decisions with the answers it recommends"
+      "alt": "A Fix a bug spec for the wrong last pickup day on a Saturday hold: the requirements document is the agent's bug investigation (a summary of where the ready message and the expiry live in fernleaf/holds.py and fernleaf/notify.py), the conversation explains the cause it found, that the hold is removed at 10:00 seven days later while the message names only the day, and its one question, what the last day to collect should be, waits under Decisions with the answer it recommends"
     },
     {
       "name": "hero",
@@ -140,7 +140,7 @@
       ],
       "ready_after": "role=button[name=/Start building/]",
       "settle_ms": 1500,
-      "alt": "Spec Builder with a finished plan: the specs list on the left with a planned reminder spec and a bug spec, the conversation with the spec agent in the middle ending with the five steps it wrote, and on the right the Tasks document's task progress (0 of 14 tasks done) with a Run button per task, the Start building button, and the two decisions it asked about, answered"
+      "alt": "Spec Builder with a finished plan: the specs list on the left with a planned reminder spec and a bug spec, the conversation with the spec agent in the middle ending with the eight tasks it wrote, and on the right the Tasks document's task progress (0 of 16 tasks done) with a Run button per task, the Start building button, and the two decisions it asked about, answered"
     },
     {
       "name": "use-case-feature",
@@ -166,7 +166,7 @@
       ],
       "ready_after": "role=radio[name='Requirements'][checked=true]",
       "settle_ms": 1500,
-      "alt": "The requirements document the agent wrote for the hold reminder, marked Approved: its introduction explains how holds expire today and what the reminder adds, and below it are the two decisions the agent asked about (whether a late check still sends the reminder, and whether the email names the book by ISBN or title), both answered"
+      "alt": "The requirements document the agent wrote for the hold reminder, marked Approved: its introduction explains how holds expire today and what the reminder adds, and below it are the two decisions the agent asked about (whether a late check still sends the reminder, and whether the two-day lead time is a fixed constant), both answered"
     },
     {
       "name": "use-case-review",
@@ -255,13 +255,18 @@
         "click": "role=button[name=/Start the conversation/]"
       },
       {
-        "caption": "The spec agent reads the project first; Trust lets it keep working",
-        "position": "top"
+        "caption": "Trust lets the agent read the project",
+        "over": "textarea[aria-label='Chat message']",
+        "position": "bottom",
+        "offset": 4
       },
       {
         "wait_for": "role=button[name=/Trust/]",
         "timeout_ms": 300000,
         "cut": true
+      },
+      {
+        "hover": "role=button[name=/Trust/] >> nth=0"
       },
       {
         "wait_ms": 1500
@@ -270,8 +275,10 @@
         "click": "role=button[name=/Trust/] >> nth=0"
       },
       {
-        "caption": "It writes requirements.md and asks its open questions",
-        "position": "top"
+        "caption": "It writes requirements and asks",
+        "over": "textarea[aria-label='Chat message']",
+        "position": "bottom",
+        "offset": 4
       },
       {
         "wait_for": "role=button[name='Approve → Design']",
@@ -285,11 +292,16 @@
         "cut": true
       },
       {
+        "caption": ""
+      },
+      {
         "wait_ms": 3500
       },
       {
         "caption": "Answer a question with one click",
-        "position": "top"
+        "over": "textarea[aria-label='Chat message']",
+        "position": "bottom",
+        "offset": 4
       },
       {
         "click": "role=button[name=/^Answer .*\\(recommended\\)/] >> nth=0"
@@ -303,11 +315,16 @@
         "cut": true
       },
       {
+        "caption": ""
+      },
+      {
         "wait_ms": 1500
       },
       {
-        "caption": "Approve the requirements: the agent drafts the design",
-        "position": "top"
+        "caption": "Approve: it drafts the design",
+        "over": "textarea[aria-label='Chat message']",
+        "position": "bottom",
+        "offset": 4
       },
       {
         "click": "role=button[name='Approve → Design']"
@@ -323,11 +340,16 @@
         "cut": true
       },
       {
+        "caption": ""
+      },
+      {
         "wait_ms": 3000
       },
       {
-        "caption": "Approve the design: the agent writes the task list",
-        "position": "top"
+        "caption": "Approve: it writes the task list",
+        "over": "textarea[aria-label='Chat message']",
+        "position": "bottom",
+        "offset": 4
       },
       {
         "click": "role=button[name='Approve → Tasks']"
@@ -343,11 +365,25 @@
         "cut": true
       },
       {
+        "caption": ""
+      },
+      {
         "click": "role=radio[name='Tasks']"
       },
       {
-        "caption": "Start building hands the reviewed task list to an agent",
-        "position": "top"
+        "caption": "Start building hands it to an agent",
+        "over": "textarea[aria-label='Chat message']",
+        "position": "bottom",
+        "offset": 4
+      },
+      {
+        "hover": "role=button[name=/Start building/] >> nth=0"
+      },
+      {
+        "wait_ms": 2500
+      },
+      {
+        "caption": ""
       },
       {
         "mouse_park": [

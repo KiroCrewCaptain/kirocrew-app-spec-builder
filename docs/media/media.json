@@ -1,7 +1,7 @@
 {
   "app": "spec-builder",
-  "captured_at": "2026-11-05T01:48:11Z",
-  "app_commit": "2dca68d9c33e37562b1ce050992122f45763d755",
+  "captured_at": "2026-11-05T02:48:06Z",
+  "app_commit": "94ef1845650344c252e3e3893e4eb1b48fcfedd3",
   "kirocrew_commit": "55439d87700799a8789a341da65e2e1c355e26fc",
   "kirocrew_tree_dirty": true,
   "gateway": "isolated temporary home, approval=reads; a freshly seeded gateway for the stub screenshots and one for the walkthrough, whose live run the live screenshots were then taken on",
@@ -34,19 +34,19 @@
       "file": "hero-dark.png",
       "name": "hero",
       "theme": "dark",
-      "bytes": 432445,
+      "bytes": 397489,
       "width": 1600,
       "height": 1000,
-      "alt": "Spec Builder with a finished plan: the specs list on the left with a planned reminder spec and a bug spec, the conversation with the spec agent in the middle ending with the five steps it wrote, and on the right the Tasks document's task progress (0 of 14 tasks done) with a Run button per task, the Start building button, and the two decisions it asked about, answered"
+      "alt": "Spec Builder with a finished plan: the specs list on the left with a planned reminder spec and a bug spec, the conversation with the spec agent in the middle ending with the eight tasks it wrote, and on the right the Tasks document's task progress (0 of 16 tasks done) with a Run button per task, the Start building button, and the two decisions it asked about, answered"
     },
     {
       "file": "hero-light.png",
       "name": "hero",
       "theme": "light",
-      "bytes": 403901,
+      "bytes": 359074,
       "width": 1600,
       "height": 1000,
-      "alt": "Spec Builder with a finished plan: the specs list on the left with a planned reminder spec and a bug spec, the conversation with the spec agent in the middle ending with the five steps it wrote, and on the right the Tasks document's task progress (0 of 14 tasks done) with a Run button per task, the Start building button, and the two decisions it asked about, answered"
+      "alt": "Spec Builder with a finished plan: the specs list on the left with a planned reminder spec and a bug spec, the conversation with the spec agent in the middle ending with the eight tasks it wrote, and on the right the Tasks document's task progress (0 of 16 tasks done) with a Run button per task, the Start building button, and the two decisions it asked about, answered"
     },
     {
       "file": "start-light.png",
@@ -61,25 +61,25 @@
       "file": "use-case-bug-light.png",
       "name": "use-case-bug",
       "theme": "light",
-      "bytes": 426436,
+      "bytes": 434244,
       "width": 1600,
       "height": 1000,
-      "alt": "A Fix a bug spec for the wrong last pickup day on a Saturday hold: the requirements document is the agent's investigation (a summary of the symptom and where the behaviour lives in fernleaf/holds.py), the conversation explains the cause it found, that the deadline is an exact time seven days after the copy came back while the message names only the day, and two questions wait under Decisions with the answers it recommends"
+      "alt": "A Fix a bug spec for the wrong last pickup day on a Saturday hold: the requirements document is the agent's bug investigation (a summary of where the ready message and the expiry live in fernleaf/holds.py and fernleaf/notify.py), the conversation explains the cause it found, that the hold is removed at 10:00 seven days later while the message names only the day, and its one question, what the last day to collect should be, waits under Decisions with the answer it recommends"
     },
     {
       "file": "use-case-feature-light.png",
       "name": "use-case-feature",
       "theme": "light",
-      "bytes": 453141,
+      "bytes": 413212,
       "width": 1600,
       "height": 1000,
-      "alt": "The requirements document the agent wrote for the hold reminder, marked Approved: its introduction explains how holds expire today and what the reminder adds, and below it are the two decisions the agent asked about (whether a late check still sends the reminder, and whether the email names the book by ISBN or title), both answered"
+      "alt": "The requirements document the agent wrote for the hold reminder, marked Approved: its introduction explains how holds expire today and what the reminder adds, and below it are the two decisions the agent asked about (whether a late check still sends the reminder, and whether the two-day lead time is a fixed constant), both answered"
     },
     {
       "file": "use-case-review-light.png",
       "name": "use-case-review",
       "theme": "light",
-      "bytes": 417048,
+      "bytes": 388658,
       "width": 1600,
       "height": 1000,
       "alt": "Reviewing the design document: a review comment on its first sentence, asking what happens when a member has no email address on file, is stacked in the tray under the document, ready to send to the agent with Send all to agent"
@@ -87,22 +87,22 @@
   ],
   "walkthrough": {
     "shortened_waits_s": [
-      11.2,
-      26.4,
-      7.1,
-      5.0,
-      29.9,
-      4.1,
-      19.7,
-      3.5
+      14.6,
+      27.4,
+      8.0,
+      4.0,
+      29.8,
+      6.1,
+      22.2,
+      5.5
     ],
     "mp4": {
       "file": "walkthrough.mp4",
-      "bytes": 1376093
+      "bytes": 1493257
     },
     "gif": {
       "file": "walkthrough.gif",
-      "bytes": 6719560,
+      "bytes": 7668015,
       "width": 880,
       "fps": 8
     },

@@ -38,7 +38,9 @@ async def test_without_the_seam_every_caller_is_refused(bound_ctx):
     with mock.patch.object(bound_ctx, "sdk_level", 0):
         denied = await _host.require_owner(_request(), "execute")
     assert denied is not None and denied.status == 403
-    assert json.loads(denied.body)["code"] == "owner_only"
+    body = json.loads(denied.body)
+    # The host gate's own wording, so the README's one FAQ entry holds on both paths.
+    assert body == {"code": "owner_only", "error": "owner authorization required"}
 
 
 @pytest.mark.asyncio

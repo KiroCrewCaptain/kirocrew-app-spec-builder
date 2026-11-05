@@ -156,6 +156,18 @@ reports what is missing through `ctx.health` (`_host.capability_issues`).
     `website/src/test/hoverVariantPolicy.test.ts:127`,
     `website/src/test/RadioChipGroup.test.tsx:173`). They stay while the
     built-in ships and go when it does.
+11. **Uninstall's purge does not reach this app's data.** `kirocrew app
+    uninstall --purge-data` deletes only
+    `<data home>/apps/spec-builder/data` (`apps/manager_uninstall.py:176-183`),
+    and this app writes nothing there: its state stays in
+    `<data home>/workspace/spec-builder/` and its decision record in
+    `<data home>/trust/spec-builder-decisions.json`, the built-in's locations,
+    so an existing user's specs and recorded answers survive adoption. A purge
+    therefore leaves both behind, and the README says so and names the paths to
+    delete by hand. Moving them into `ctx.data_dir` would lose an adopted
+    user's data (and gap 3's agent-unwritable leaf); the generic fix is an
+    App Kit seam through which an app declares the data paths it owns outside
+    `ctx.data_dir`, so a purge removes them too.
 
 ## UI
 

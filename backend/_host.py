@@ -267,10 +267,11 @@ def audit(operation: str, outcome: str, resources: str = "") -> None:
 
 
 def _owner_denied() -> Any:
+    """The host owner gate's own refusal, so both paths read the same to a user."""
     from aiohttp import web
 
     return web.json_response(
-        {"code": "owner_only", "error": "only the dashboard owner can do this"}, status=403
+        {"code": "owner_only", "error": "owner authorization required"}, status=403
     )
 
 
