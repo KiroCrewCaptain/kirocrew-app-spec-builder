@@ -153,8 +153,10 @@ page open.
   **Where should specs be saved?** can move new specs to one folder of your
   choice instead. The list of specs and those settings are in
   `~/.kiro/crew/workspace/spec-builder/`, the answers you recorded are in
-  `~/.kiro/crew/trust/spec-builder-decisions.json` (both under the folder you
-  chose for Kiro Crew's data, if you moved it), and each spec's conversation is
+  `~/.kiro/crew/apps/spec-builder/data/trust/spec-builder-decisions.json`
+  (`~/.kiro/crew/trust/spec-builder-decisions.json` on a Kiro Crew below App Kit
+  level 5; both under the folder you chose for Kiro Crew's data, if you moved it),
+  and each spec's conversation is
   a chat session of its own, kept with your other sessions.
 - **Model:** **Which model should run spec generation?** in **Settings** picks
   the model for spec agents; **Default (inherit)** uses the model your chats
@@ -257,12 +259,12 @@ so **Enable** opens **Trust “Spec Builder” to run its own code?**, and **Tru
 this app and enable** does both. `kirocrew app enable spec-builder` is refused
 with `app_execution_denied` until the app is trusted.
 `kirocrew app disable spec-builder` turns it off;
-`kirocrew app uninstall spec-builder` removes the app. Neither touches your
-data: the list of specs, the settings and the recorded answers live outside
-the app's own folder (see [Settings & data](#settings--data)), so
-`--purge-data`, which deletes only that folder's `data/`, deletes none of them
-either. To remove them, delete `~/.kiro/crew/workspace/spec-builder/` and
-`~/.kiro/crew/trust/spec-builder-decisions.json` yourself, and the
+`kirocrew app uninstall spec-builder` removes the app. Neither touches the list
+of specs or the settings: they live outside the app's own folder (see
+[Settings & data](#settings--data)), so `--purge-data`, which deletes only that
+folder's `data/`, deletes the recorded answers there and nothing else. To remove
+the rest, delete `~/.kiro/crew/workspace/spec-builder/` (and, on a Kiro Crew below
+App Kit level 5, `~/.kiro/crew/trust/spec-builder-decisions.json`) yourself, and the
 `.kiro/specs/<name>/` folders in your projects if you want those gone too.
 
 ### Tests

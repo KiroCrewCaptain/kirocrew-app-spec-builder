@@ -198,8 +198,93 @@ def test_the_ledger_is_not_under_the_apps_own_state_dir(tmp_path, monkeypatch):
     assert (tmp_path / "state") not in path.parents, path
     from kiro_crew import security
 
-    assert security.is_sensitive_path(str(path))
-    assert security.is_sensitive_path(str(path.parent))
+    # Write-fenced at either location: the keystone's ``trust/`` on an older host, the
+    # app's declared read-only ``trust/`` on a host at App Kit level 5.
+    assert security.is_sensitive_write_path(str(path))
+    assert security.is_sensitive_write_path(str(path.parent))
+
+
+def test_the_app_declares_the_ledger_directory_read_only_to_agents():
+    """On a level-5 host the fence is the app's own declaration, so the manifest carries it."""
+    manifest = json.loads((Path(__file__).resolve().parents[1] / "app.json").read_text())
+    assert manifest["agentReadOnlyDirs"] == ["trust"]
+
+
+def _level_five_home(monkeypatch, tmp_path):
+    """A host at App Kit level 5 whose data home is *tmp_path*: (old path, new path)."""
+    from backend import decisions
+
+    monkeypatch.setattr(routes, "_DECISIONS_PATH", None)
+    monkeypatch.setattr(decisions, "config_dir", lambda: tmp_path)
+    monkeypatch.setattr(decisions, "sdk_level", lambda _ctx: decisions.READONLY_DIRS_SDK_LEVEL)
+    return tmp_path / "trust" / "spec-builder-decisions.json", routes._decisions_path()
+
+
+def test_a_level_five_host_keeps_the_ledger_in_the_declared_directory(tmp_path, monkeypatch):
+    _legacy, path = _level_five_home(monkeypatch, tmp_path)
+    assert path == tmp_path / "apps" / "spec-builder" / "data" / "trust" / "spec-builder-decisions.json"
+
+
+def test_an_older_host_keeps_the_ledger_where_it_gates_it(tmp_path, monkeypatch):
+    """A host below level 5 ignores the declaration, so the record stays on its keystone."""
+    from backend import decisions
+
+    monkeypatch.setattr(routes, "_DECISIONS_PATH", None)
+    monkeypatch.setattr(decisions, "config_dir", lambda: tmp_path)
+    monkeypatch.setattr(decisions, "sdk_level", lambda _ctx: decisions.READONLY_DIRS_SDK_LEVEL - 1)
+    assert routes._decisions_path() == tmp_path / "trust" / "spec-builder-decisions.json"
+    assert decisions._legacy_decisions_path() is None
+
+
+def test_the_built_ins_record_is_moved_once_and_kept(tmp_path, monkeypatch):
+    legacy, path = _level_five_home(monkeypatch, tmp_path)
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text(json.dumps({"/specs/s": {"answers": {}}}), encoding="utf-8")
+
+    with routes._DECISIONS_LOCK:
+        store, usable = routes._read_decisions()
+
+    assert usable and store == {"/specs/s": {"answers": {}}}
+    assert path.is_file() and not legacy.exists()
+    with routes._DECISIONS_LOCK:
+        assert routes._read_decisions() == (store, True)
+
+
+def test_a_record_at_the_new_location_wins_over_the_old_one(tmp_path, monkeypatch):
+    legacy, path = _level_five_home(monkeypatch, tmp_path)
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text(json.dumps({"/old": {}}), encoding="utf-8")
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps({"/new": {}}), encoding="utf-8")
+
+    with routes._DECISIONS_LOCK:
+        assert routes._read_decisions() == ({"/new": {}}, True)
+    assert legacy.exists()
+
+
+def test_a_move_that_cannot_write_keeps_the_old_record(tmp_path, monkeypatch):
+    from backend import decisions
+
+    legacy, path = _level_five_home(monkeypatch, tmp_path)
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text(json.dumps({"/specs/s": {}}), encoding="utf-8")
+
+    def refuse(*_a, **_k):
+        raise OSError("read-only")
+
+    monkeypatch.setattr(decisions, "atomic_write", refuse)
+    with routes._DECISIONS_LOCK:
+        assert routes._read_decisions() == ({"/specs/s": {}}, True)
+    assert legacy.exists() and not path.exists()
+
+
+def test_an_unreadable_old_record_is_an_unusable_store(tmp_path, monkeypatch):
+    legacy, _path = _level_five_home(monkeypatch, tmp_path)
+    legacy.parent.mkdir(parents=True)
+    legacy.write_bytes(b"\xff\xfe not utf-8")
+
+    with routes._DECISIONS_LOCK:
+        assert routes._read_decisions() == ({}, False)
 
 
 @pytest.mark.asyncio

@@ -30,6 +30,9 @@
     ],
     "storage": true
   },
+  "agentReadOnlyDirs": [
+    "trust"
+  ],
   "backend": {
     "hooks": {
       "routes": "backend.routes:register_routes"

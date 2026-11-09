@@ -45,7 +45,10 @@ needs is resolved by its existing name, and listed.
   (`<project>/.kiro/specs/<name>/`, or under the settings' base path), the
   app's state under `<data home>/workspace/spec-builder/` (`index.json`,
   `deleted.json`, `settings.json`), the decision record at
-  `<data home>/trust/spec-builder-decisions.json`, and each spec's conversation
+  `<data home>/apps/spec-builder/data/trust/spec-builder-decisions.json` on a host
+  at App Kit level 5 (moved there once from the built-in's
+  `<data home>/trust/spec-builder-decisions.json`, where an older host keeps it),
+  and each spec's conversation
   in the chat slot `spec-builder-<name>-<8 hex>` with app provenance
   `spec-builder`. All of these are outside the app's install directory, so an
   update or an adoption keeps them. The data home is derived from
@@ -113,13 +116,14 @@ reports what is missing through `ctx.health` (`_host.capability_issues`).
    copy's hooks load only when the operator trusts it. For an existing user
    Kiro Crew's adoption writes that grant for this repository; a fresh install
    goes through the normal trust dialog.
-3. **The decision record lives under the keystone's `trust/` directory.** The
-   built-in put `spec-builder-decisions.json` there so an agent cannot erase or
-   forge a recorded answer (Kiro Crew `security/paths_lists.py:392`, which
-   gates the whole directory). This copy keeps the location so an existing
-   user's recorded answers still lock their decisions. The comment in core
-   names the app; a generic seam would be an app-owned, agent-unwritable data
-   leaf.
+3. **The decision record is agent-unwritable through the app's own manifest.**
+   The built-in put `spec-builder-decisions.json` under the data home's `trust/`
+   so an agent cannot erase or forge a recorded answer. `app.json` now declares
+   `trust` in `agentReadOnlyDirs` (App Kit seam level 5, App Kit spec §38), and
+   on such a host the record lives in `<data dir>/trust/` and is moved there once
+   from the old location (copy first, remove after). A host below level 5
+   ignores the key, so there the record stays under the data home's `trust/`,
+   which that host gates.
 4. **Slot-mode and sidebar.** Spec slots are created with `app="spec-builder"`
    and the default mode, exactly as the built-in did; they show in the chat
    sidebar's app grouping as before. No core literal names this app's mode.
@@ -158,16 +162,15 @@ reports what is missing through `ctx.health` (`_host.capability_issues`).
     built-in ships and go when it does.
 11. **Uninstall's purge does not reach this app's data.** `kirocrew app
     uninstall --purge-data` deletes only
-    `<data home>/apps/spec-builder/data` (`apps/manager_uninstall.py:176-183`),
-    and this app writes nothing there: its state stays in
-    `<data home>/workspace/spec-builder/` and its decision record in
-    `<data home>/trust/spec-builder-decisions.json`, the built-in's locations,
-    so an existing user's specs and recorded answers survive adoption. A purge
-    therefore leaves both behind, and the README says so and names the paths to
-    delete by hand. Moving them into `ctx.data_dir` would lose an adopted
-    user's data (and gap 3's agent-unwritable leaf); the generic fix is an
-    App Kit seam through which an app declares the data paths it owns outside
-    `ctx.data_dir`, so a purge removes them too.
+    `<data home>/apps/spec-builder/data` (`apps/manager_uninstall.py:176-183`).
+    Its state stays in `<data home>/workspace/spec-builder/`, the built-in's
+    location, so an existing user's specs survive adoption, and a purge leaves
+    it behind; the README says so and names the path to delete by hand. On a
+    host at App Kit level 5 the decision record is in the data directory (gap 3),
+    so a purge removes it; below level 5 it stays under the data home's `trust/`.
+    Moving the state into `ctx.data_dir` would lose an adopted user's data; the
+    generic fix is an App Kit seam through which an app declares the data paths
+    it owns outside `ctx.data_dir`, so a purge removes them too.
 
 ## UI
 
