@@ -9,7 +9,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from ._host import atomic_write, config_dir
+from ._host import atomic_write, bound, config_dir, sdk_level
 from .parsers import (
     _MAX_DECISION_PROMPT,
     _clean_str,
@@ -30,11 +30,17 @@ logger = logging.getLogger("kirocrew.app.spec-builder")
 _DECISIONS_PATH: Path | None = None
 
 
+#: The App Kit seam level whose ``agentReadOnlyDirs`` fences this app's ``trust/``.
+READONLY_DIRS_SDK_LEVEL = 5
+#: The record's file name, at either location.
+_DECISIONS_LEAF = "spec-builder-decisions.json"
+
+
 def _decisions_path() -> Path:
     """Decisions this backend has already dispatched to an agent.
 
-    Under the security keystone's ``trust/`` directory, NOT in this app's own state
-    dir. Two reasons, and the second is why the leaf alone was not enough:
+    Agents must never write it, for two reasons, and the second is why the leaf alone
+    was not enough:
 
       * the index is agent-writable by design, and this record is the app's promise
         that a decision the user answered cannot be answered again -- so an agent
@@ -42,17 +48,63 @@ def _decisions_path() -> Path:
         one to lock a decision the user never answered;
       * gating only the FILE left its parent replaceable. ``workspace/spec-builder``
         is not itself a sensitive path, so one ``ln -s`` or ``mv`` naming the
-        directory redirected every read and write this backend makes -- it opens the
-        path directly, as keystone writers must. The whole ``trust`` directory is
-        gated (it is the SEL trust root), so the parent, the leaf and every shell
-        verb naming either are refused.
+        directory redirected every read and write this backend makes, because it
+        opens the path directly.
 
-    This backend opens the path directly, which is how the keystone leaves are always
-    written (see the Notes vault registry and the Ops Mission Control policy leaf).
+    On a host at App Kit seam level 5 or later the record is in this app's data
+    directory, under ``trust/``, which ``app.json`` declares in ``agentReadOnlyDirs``:
+    the host refuses agent file-tool writes under it, seals it read-only in every
+    sandbox mode with its parents guarded against rename, and refuses a spawn over a
+    link on the way to it. An older host ignores that key, so there the record stays
+    where the built-in kept it, under the data home's ``trust/`` (the SEL trust root),
+    which such a host gates as a whole.
     """
     if _DECISIONS_PATH is not None:
         return _DECISIONS_PATH
-    return config_dir() / "trust" / "spec-builder-decisions.json"
+    if sdk_level(bound()) >= READONLY_DIRS_SDK_LEVEL:
+        return config_dir() / "apps" / "spec-builder" / "data" / "trust" / _DECISIONS_LEAF
+    return config_dir() / "trust" / _DECISIONS_LEAF
+
+
+def _legacy_decisions_path() -> Path | None:
+    """The built-in's location when the record has moved from it, else ``None``.
+
+    ``None`` on an older host (the record is still there) and while a test or caller
+    has pointed :data:`_DECISIONS_PATH` elsewhere, so a redirected record never reads
+    the real host's.
+    """
+    if _DECISIONS_PATH is not None or sdk_level(bound()) < READONLY_DIRS_SDK_LEVEL:
+        return None
+    return config_dir() / "trust" / _DECISIONS_LEAF
+
+
+def _move_legacy_decisions(path: Path) -> str | None:
+    """Move the built-in's record to *path* when *path* is absent. BLOCKING, under the lock.
+
+    Returns the record's text (from wherever it now is), or ``None`` when there is no
+    earlier record. The copy is written first and the old file removed after, so a
+    failure at either step keeps every answer: a failed write leaves the old file to be
+    read again next time, and a failed removal leaves a stale copy nothing reads once
+    the new one exists. Raises ``OSError`` or ``UnicodeError`` when the old record cannot
+    be read, which the caller reports as an unusable store.
+    """
+    legacy = _legacy_decisions_path()
+    if legacy is None:
+        return None
+    try:
+        raw = legacy.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+    try:
+        atomic_write(path, raw)
+    except OSError:
+        logger.warning("could not move the decision record from %s to %s", legacy, path)
+        return raw
+    try:
+        legacy.unlink()
+    except OSError:
+        logger.warning("could not remove the moved decision record at %s", legacy)
+    return raw
 
 
 async def _aload_index_with_decision_alias_status(
@@ -197,7 +249,14 @@ def _read_decisions() -> tuple[dict, bool]:
         # code page. Otherwise non-ASCII answers could be changed or rejected.
         raw = path.read_text(encoding="utf-8")
     except FileNotFoundError:
-        return {}, True
+        try:
+            moved = _move_legacy_decisions(path)
+        except (OSError, UnicodeError):
+            logger.warning("could not read the earlier decision record", exc_info=True)
+            return {}, False
+        if moved is None:
+            return {}, True
+        raw = moved
     except (OSError, UnicodeError):
         # Decode errors are not OSError subclasses. Preserve the ``(store, usable)``
         # contract so malformed bytes are reported as an unusable store, not a 500.
@@ -218,8 +277,7 @@ def _save_decisions(store: dict) -> None:
     """Persist the decisions file. Atomic (temp + rename), like every writer here.
 
     No mkdir of its own: ``atomic_write`` creates the target's parent, which matters
-    because the ledger lives under the keystone's ``trust/`` root rather than this
-    app's state dir, and that directory may not exist yet on a fresh install.
+    because the ledger's ``trust/`` directory may not exist yet on a fresh install.
     """
     atomic_write(_decisions_path(), json.dumps(store, indent=2))
 
