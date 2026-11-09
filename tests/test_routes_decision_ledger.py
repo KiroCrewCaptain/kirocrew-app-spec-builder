@@ -206,7 +206,9 @@ def test_the_ledger_is_not_under_the_apps_own_state_dir(tmp_path, monkeypatch):
 
 def test_the_app_declares_the_ledger_directory_read_only_to_agents():
     """On a level-5 host the fence is the app's own declaration, so the manifest carries it."""
-    manifest = json.loads((Path(__file__).resolve().parents[1] / "app.json").read_text())
+    manifest = json.loads(
+        (Path(__file__).resolve().parents[1] / "app.json").read_text(encoding="utf-8")
+    )
     assert manifest["agentReadOnlyDirs"] == ["trust"]
 
 
@@ -222,7 +224,8 @@ def _level_five_home(monkeypatch, tmp_path):
 
 def test_a_level_five_host_keeps_the_ledger_in_the_declared_directory(tmp_path, monkeypatch):
     _legacy, path = _level_five_home(monkeypatch, tmp_path)
-    assert path == tmp_path / "apps" / "spec-builder" / "data" / "trust" / "spec-builder-decisions.json"
+    data = tmp_path / "apps" / "spec-builder" / "data"
+    assert path == data / "trust" / "spec-builder-decisions.json"
 
 
 def test_an_older_host_keeps_the_ledger_where_it_gates_it(tmp_path, monkeypatch):
