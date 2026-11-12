@@ -211,7 +211,7 @@ def config_dir() -> Path:
     ``<data home>/trust/spec-builder-decisions.json``, and read the dashboard's
     ``<data home>/recent_projects.json``. Those locations are kept, so an
     existing user's specs, settings and recorded answers are found where they
-    are; on a host at App Kit level 5 the decision record moves, once, into the
+    are; on a host at App Kit level 6 the decision record moves, once, into the
     data directory's ``trust/`` (``decisions._decisions_path``). The gateway hands an app ``ctx.data_dir = <data home>/apps/<app>/data``;
     a context whose data directory does not have that shape is refused, never
     resolved to some other directory.

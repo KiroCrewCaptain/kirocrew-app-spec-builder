@@ -31,7 +31,7 @@ _DECISIONS_PATH: Path | None = None
 
 
 #: The App Kit seam level whose ``agentReadOnlyDirs`` fences this app's ``trust/``.
-READONLY_DIRS_SDK_LEVEL = 5
+READONLY_DIRS_SDK_LEVEL = 6
 #: The record's file name, at either location.
 _DECISIONS_LEAF = "spec-builder-decisions.json"
 
@@ -51,7 +51,7 @@ def _decisions_path() -> Path:
         directory redirected every read and write this backend makes, because it
         opens the path directly.
 
-    On a host at App Kit seam level 5 or later the record is in this app's data
+    On a host at App Kit seam level 6 or later the record is in this app's data
     directory, under ``trust/``, which ``app.json`` declares in ``agentReadOnlyDirs``:
     the host refuses agent file-tool writes under it, seals it read-only in every
     sandbox mode with its parents guarded against rename, and refuses a spawn over a
