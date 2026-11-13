@@ -46,7 +46,7 @@ needs is resolved by its existing name, and listed.
   app's state under `<data home>/workspace/spec-builder/` (`index.json`,
   `deleted.json`, `settings.json`), the decision record at
   `<data home>/apps/spec-builder/data/trust/spec-builder-decisions.json` on a host
-  at App Kit level 6 (moved there once from the built-in's
+  at App Kit level 7 (moved there once from the built-in's
   `<data home>/trust/spec-builder-decisions.json`, where an older host keeps it),
   and each spec's conversation
   in the chat slot `spec-builder-<name>-<8 hex>` with app provenance
@@ -119,9 +119,9 @@ reports what is missing through `ctx.health` (`_host.capability_issues`).
 3. **The decision record is agent-unwritable through the app's own manifest.**
    The built-in put `spec-builder-decisions.json` under the data home's `trust/`
    so an agent cannot erase or forge a recorded answer. `app.json` now declares
-   `trust` in `agentReadOnlyDirs` (App Kit seam level 6, App Kit spec §38), and
+   `trust` in `agentReadOnlyDirs` (App Kit seam level 7, App Kit spec §39), and
    on such a host the record lives in `<data dir>/trust/` and is moved there once
-   from the old location (copy first, remove after). A host below level 6
+   from the old location (copy first, remove after). A host below level 7
    ignores the key, so there the record stays under the data home's `trust/`,
    which that host gates.
 4. **Slot-mode and sidebar.** Spec slots are created with `app="spec-builder"`
@@ -166,8 +166,8 @@ reports what is missing through `ctx.health` (`_host.capability_issues`).
     Its state stays in `<data home>/workspace/spec-builder/`, the built-in's
     location, so an existing user's specs survive adoption, and a purge leaves
     it behind; the README says so and names the path to delete by hand. On a
-    host at App Kit level 6 the decision record is in the data directory (gap 3),
-    so a purge removes it; below level 6 it stays under the data home's `trust/`.
+    host at App Kit level 7 the decision record is in the data directory (gap 3),
+    so a purge removes it; below level 7 it stays under the data home's `trust/`.
     Moving the state into `ctx.data_dir` would lose an adopted user's data; the
     generic fix is an App Kit seam through which an app declares the data paths
     it owns outside `ctx.data_dir`, so a purge removes them too.

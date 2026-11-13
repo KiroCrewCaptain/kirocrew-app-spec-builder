@@ -155,7 +155,7 @@ page open.
   `~/.kiro/crew/workspace/spec-builder/`, the answers you recorded are in
   `~/.kiro/crew/apps/spec-builder/data/trust/spec-builder-decisions.json`
   (`~/.kiro/crew/trust/spec-builder-decisions.json` on a Kiro Crew below App Kit
-  level 6; both under the folder you chose for Kiro Crew's data, if you moved it),
+  level 7; both under the folder you chose for Kiro Crew's data, if you moved it),
   and each spec's conversation is
   a chat session of its own, kept with your other sessions.
 - **Model:** **Which model should run spec generation?** in **Settings** picks
@@ -264,7 +264,7 @@ of specs or the settings: they live outside the app's own folder (see
 [Settings & data](#settings--data)), so `--purge-data`, which deletes only that
 folder's `data/`, deletes the recorded answers there and nothing else. To remove
 the rest, delete `~/.kiro/crew/workspace/spec-builder/` (and, on a Kiro Crew below
-App Kit level 6, `~/.kiro/crew/trust/spec-builder-decisions.json`) yourself, and the
+App Kit level 7, `~/.kiro/crew/trust/spec-builder-decisions.json`) yourself, and the
 `.kiro/specs/<name>/` folders in your projects if you want those gone too.
 
 ### Tests
