@@ -860,6 +860,11 @@ def test_both_stop_helpers_discard_before_they_stop():
     helpers. Asserts on the calls, not on a comment."""
     for fn in (routes._halt_active_turn, routes._teardown_worker_slot):
         src = inspect.getsource(fn)
+        # The seam branch hands the whole sequence to ``ctx.chat_slots``, whose own
+        # order Kiro Crew pins (test_app_chat_slot_sdk.py); the guard reads the
+        # fallback that follows it.
+        seam = src.index("_host.chat_slots()")
+        src = src[src.index("return True", seam) :]
         assert "_discard_queued_work(" in src, f"{fn.__name__} does not discard queued work"
         discard = src.index("_discard_queued_work(")
         for stop in ("task.cancel()", "stop_turn("):

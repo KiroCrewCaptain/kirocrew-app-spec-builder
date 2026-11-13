@@ -237,12 +237,14 @@ route records (a 0.12.x gateway skips them, so the app's API would answer 404
 there) and `ctx.require_owner` (Start building and Pause), plus `ctx.scrub`
 (redaction of everything shown that the agent or a project wrote), `ctx.audit`
 (the security event log) and `ctx.data_dir`. A spec's agent is a dashboard chat
-session the app drives through gateway functions no App Kit seam offers yet:
-the chat runner and its session persistence, AutoNudge for the build, the
-sandboxed process spawn for `git`, the critical tool-audit record, and the
-no-follow file readers. `backend/_host.py` looks each up by name through
-`importlib` and refuses the operation when one is missing; `register_routes`
-reports what is missing through the app's health. No other backend module names
+session the app drives through `ctx.chat_slots` (App Kit level 8, declared as
+`permissions.chatSlots`): the turn, its queue, Pause, delete's archive, the
+transcript and the AutoNudge loop for the build. On an older Kiro Crew it reaches
+the chat runner, its session persistence and AutoNudge by name instead. The
+sandboxed process spawn for `git`, the critical tool-audit record and the
+no-follow file readers have no App Kit seam yet. `backend/_host.py` looks each
+name up through `importlib` and refuses the operation when one is missing;
+`register_routes` reports what is missing through the app's health. No other backend module names
 `kiro_crew` (`tests/test_no_host_imports.py`).
 
 ### Install from a clone

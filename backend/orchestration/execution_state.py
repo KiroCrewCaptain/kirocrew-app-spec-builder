@@ -50,16 +50,27 @@ _EXEC_MAX_CYCLES = 60
 _ORPHAN_QUIESCE_TIMEOUT_SECS = 2.0
 
 
+def _nudge_service() -> Any | None:
+    """The AutoNudge loops this app reads, or ``None`` when AutoNudge is not running.
+
+    On a gateway with ``ctx.chat_slots`` (App Kit level 8) it is the seam's view,
+    which holds only the loops on this app's own slots; on an older one it is the
+    gateway's service, resolved by name. Both answer ``get_by_slot``, ``list_all``
+    and ``remove`` the same way.
+    """
+    if (slots := _host.chat_slots()) is not None:
+        return slots.nudges()
+    return _autonudge_instance() if _autonudge_instance is not None else None
+
+
 def _exec_loop_id_for_slot(slot_key: str) -> str | None:
     """The id of the live autonudge loop on *slot_key*, or ``None``.
 
     Captured by stop/delete BEFORE they await, so the removal can be pinned to
     the loop that existed when the request arrived.
     """
-    if _autonudge_instance is None:
-        return None
     try:
-        svc = _autonudge_instance()
+        svc = _nudge_service()
         if svc is None:
             return None
         loop = svc.get_by_slot(slot_key)
@@ -94,9 +105,7 @@ def _matching_execution_loops(
     """
     try:
         if service is _UNPINNED:
-            if _autonudge_instance is None:
-                return {}
-            svc = _autonudge_instance()
+            svc = _nudge_service()
         else:
             svc = service
         if svc is None:
@@ -151,6 +160,9 @@ def _matching_execution_loops(
 
 async def _remove_orphaned_executions(state: Any) -> set[str]:
     """Archive endpoint-less workers in one service-owned store transaction."""
+    if (slots := _host.chat_slots()) is not None:
+        async with slots.nudge_maintenance() as service:
+            return await _remove_orphaned_executions_with_service(state, service)
     if _AutoNudgeService is None:
         raise RuntimeError("AutoNudge service unavailable during orphan cleanup")
     async with _AutoNudgeService.maintenance_service() as service:
@@ -240,10 +252,10 @@ def _exec_loop_active_for_slot(slot_key: str) -> bool:
     service deactivates it on its own, without telling this app. So the index's
     ``status`` cannot be trusted by itself -- the live loop is the authority.
     """
-    if _autonudge_instance is None or not slot_key:
+    if not slot_key:
         return False
     try:
-        svc = _autonudge_instance()
+        svc = _nudge_service()
         if svc is None:
             return False
         loop = svc.get_by_slot(slot_key)
@@ -403,14 +415,12 @@ async def _remove_nudge_loop_for_slot(
     slot_key: str, *, only_loop_id: Any = _UNPINNED, stop_reason: str = ""
 ) -> None:
     """Remove the pinned autonudge loop bound to an already-captured slot key."""
-    if _autonudge_instance is None:  # pragma: no cover - present in prod
-        return
     if only_loop_id is None:
         return  # pinned, but nothing was captured -> nothing of ours to remove
     # Failures propagate so a persisted loop cannot survive a reported delete and
     # rearm against a same-name spec after restart. Best-effort unwind callers catch
     # the failure explicitly.
-    svc = _autonudge_instance()
+    svc = _nudge_service()
     if svc is None:
         return
     loop = svc.get_by_slot(slot_key)
