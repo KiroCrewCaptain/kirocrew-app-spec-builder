@@ -199,21 +199,21 @@ def test_the_ledger_is_not_under_the_apps_own_state_dir(tmp_path, monkeypatch):
     from kiro_crew import security
 
     # Write-fenced at either location: the keystone's ``trust/`` on an older host, the
-    # app's declared read-only ``trust/`` on a host at App Kit level 6.
+    # app's declared read-only ``trust/`` on a host at App Kit level 7.
     assert security.is_sensitive_write_path(str(path))
     assert security.is_sensitive_write_path(str(path.parent))
 
 
 def test_the_app_declares_the_ledger_directory_read_only_to_agents():
-    """On a level-6 host the fence is the app's own declaration, so the manifest carries it."""
+    """On a level-7 host the fence is the app's own declaration, so the manifest carries it."""
     manifest = json.loads(
         (Path(__file__).resolve().parents[1] / "app.json").read_text(encoding="utf-8")
     )
     assert manifest["agentReadOnlyDirs"] == ["trust"]
 
 
-def _level_six_home(monkeypatch, tmp_path):
-    """A host at App Kit level 6 whose data home is *tmp_path*: (old path, new path)."""
+def _level_seven_home(monkeypatch, tmp_path):
+    """A host at App Kit level 7 whose data home is *tmp_path*: (old path, new path)."""
     from backend import decisions
 
     monkeypatch.setattr(routes, "_DECISIONS_PATH", None)
@@ -222,14 +222,14 @@ def _level_six_home(monkeypatch, tmp_path):
     return tmp_path / "trust" / "spec-builder-decisions.json", routes._decisions_path()
 
 
-def test_a_level_six_host_keeps_the_ledger_in_the_declared_directory(tmp_path, monkeypatch):
-    _legacy, path = _level_six_home(monkeypatch, tmp_path)
+def test_a_level_seven_host_keeps_the_ledger_in_the_declared_directory(tmp_path, monkeypatch):
+    _legacy, path = _level_seven_home(monkeypatch, tmp_path)
     data = tmp_path / "apps" / "spec-builder" / "data"
     assert path == data / "trust" / "spec-builder-decisions.json"
 
 
 def test_an_older_host_keeps_the_ledger_where_it_gates_it(tmp_path, monkeypatch):
-    """A host below level 6 ignores the declaration, so the record stays on its keystone."""
+    """A host below level 7 ignores the declaration, so the record stays on its keystone."""
     from backend import decisions
 
     monkeypatch.setattr(routes, "_DECISIONS_PATH", None)
@@ -238,19 +238,19 @@ def test_an_older_host_keeps_the_ledger_where_it_gates_it(tmp_path, monkeypatch)
     assert routes._decisions_path() == tmp_path / "trust" / "spec-builder-decisions.json"
 
 
-def test_a_level_five_host_does_not_fence_the_declared_directory(tmp_path, monkeypatch):
-    """Level 5 is ``ctx.app_token``, not ``agentReadOnlyDirs``, so the record stays put."""
+def test_a_level_six_host_does_not_fence_the_declared_directory(tmp_path, monkeypatch):
+    """Level 6 is the SDK's issue list, not ``agentReadOnlyDirs``, so the record stays put."""
     from backend import decisions
 
     monkeypatch.setattr(routes, "_DECISIONS_PATH", None)
     monkeypatch.setattr(decisions, "config_dir", lambda: tmp_path)
-    monkeypatch.setattr(decisions, "sdk_level", lambda _ctx: 5)
+    monkeypatch.setattr(decisions, "sdk_level", lambda _ctx: 6)
     assert routes._decisions_path() == tmp_path / "trust" / "spec-builder-decisions.json"
     assert decisions._legacy_decisions_path() is None
 
 
 def test_the_built_ins_record_is_moved_once_and_kept(tmp_path, monkeypatch):
-    legacy, path = _level_six_home(monkeypatch, tmp_path)
+    legacy, path = _level_seven_home(monkeypatch, tmp_path)
     legacy.parent.mkdir(parents=True)
     legacy.write_text(json.dumps({"/specs/s": {"answers": {}}}), encoding="utf-8")
 
@@ -264,7 +264,7 @@ def test_the_built_ins_record_is_moved_once_and_kept(tmp_path, monkeypatch):
 
 
 def test_a_record_at_the_new_location_wins_over_the_old_one(tmp_path, monkeypatch):
-    legacy, path = _level_six_home(monkeypatch, tmp_path)
+    legacy, path = _level_seven_home(monkeypatch, tmp_path)
     legacy.parent.mkdir(parents=True)
     legacy.write_text(json.dumps({"/old": {}}), encoding="utf-8")
     path.parent.mkdir(parents=True)
@@ -278,7 +278,7 @@ def test_a_record_at_the_new_location_wins_over_the_old_one(tmp_path, monkeypatc
 def test_a_move_that_cannot_write_keeps_the_old_record(tmp_path, monkeypatch):
     from backend import decisions
 
-    legacy, path = _level_six_home(monkeypatch, tmp_path)
+    legacy, path = _level_seven_home(monkeypatch, tmp_path)
     legacy.parent.mkdir(parents=True)
     legacy.write_text(json.dumps({"/specs/s": {}}), encoding="utf-8")
 
@@ -292,7 +292,7 @@ def test_a_move_that_cannot_write_keeps_the_old_record(tmp_path, monkeypatch):
 
 
 def test_an_unreadable_old_record_is_an_unusable_store(tmp_path, monkeypatch):
-    legacy, _path = _level_six_home(monkeypatch, tmp_path)
+    legacy, _path = _level_seven_home(monkeypatch, tmp_path)
     legacy.parent.mkdir(parents=True)
     legacy.write_bytes(b"\xff\xfe not utf-8")
 
