@@ -72,8 +72,8 @@ class _Seam:
         self._record("stop_turn", state, slot)
         return True
 
-    async def archive(self, state, slot, *, require=False):
-        self._record("archive", state, slot, require=require)
+    async def archive(self, state, slot):
+        self._record("archive", state, slot)
         return self.archived
 
     async def transcript(self, state, key):
@@ -84,8 +84,10 @@ class _Seam:
         self._record("restore", state, key, adopt_closed=adopt_closed)
         return self.restored
 
-    def open(self, state, key):
+    async def open(self, state, key):
         self._record("open", state, key)
+        if (existing := state.slots.get(key)) is not None:
+            return existing, False
         slot = types.SimpleNamespace(
             key=key, _app=APP, project="", model="", _titled=False, title="", running=False
         )
@@ -228,15 +230,17 @@ async def test_delete_archives_through_the_seam_and_reports_a_failed_save(seam, 
     slot = _own_slot()
     state = _State(slot)
     assert await runtime._teardown_worker_slot(state, "seamed", only_slot=slot, require_archive=True)
-    assert seam.named("archive") == [((state, slot), {"require": True})]
+    assert seam.named("archive") == [((state, slot), {})]
     seam.archived = False
     assert (
         await runtime._teardown_worker_slot(state, "seamed", only_slot=slot, require_archive=True)
         is False
     )
+    # A failed save leaves the slot with the gateway, so a best-effort caller goes on.
+    assert await runtime._teardown_worker_slot(state, "seamed", only_slot=slot) is True
     replaced = _own_slot()
     assert await runtime._teardown_worker_slot(state, "seamed", only_slot=replaced) is True
-    assert len(seam.named("archive")) == 2, "a replaced slot reached the seam"
+    assert len(seam.named("archive")) == 3, "a replaced slot reached the seam"
 
 
 @pytest.mark.asyncio
@@ -264,6 +268,20 @@ async def test_a_cold_worker_is_restored_and_opened_through_the_seam(seam, monke
     assert slot is not None and slot.key == key and slot.project == str(tmp_path)
     assert seam.named("restore") == [((state, key), {"adopt_closed": True})]
     assert seam.named("open") == [((state, key), {})]
+
+
+@pytest.mark.asyncio
+async def test_a_live_worker_is_opened_through_the_seam_so_its_rows_are_read_in(
+    seam, monkeypatch, tmp_path
+):
+    monkeypatch.setattr(runtime, "_safe_dir", lambda wd: tmp_path)
+    live = _own_slot()
+    live.project, live.model, live._titled, live.title = "", "", True, "Spec: seamed"
+    state = _State(live)
+    slot = await runtime._ensure_worker_slot(state, "seamed", {"working_dir": str(tmp_path)})
+    assert slot is live
+    assert seam.named("open") == [((state, live.key), {})]
+    assert seam.named("restore") == []
 
 
 @pytest.mark.asyncio

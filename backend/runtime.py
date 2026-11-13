@@ -149,9 +149,17 @@ async def _ensure_worker_slot(
             return None
         slot = existing
         created = False
+        if (slots := _host.chat_slots()) is not None:
+            # The seam reads a restored sidebar row's rows in, off the event loop,
+            # before anything sends to it.
+            try:
+                slot, created = await slots.open(state, slot_key)
+            except PermissionError:
+                _audit("spec_slot_foreign_denied", f"{name}: opened elsewhere", outcome="denied")
+                return None
     elif (slots := _host.chat_slots()) is not None:
         try:
-            slot, created = slots.open(state, slot_key)
+            slot, created = await slots.open(state, slot_key)
         except PermissionError:
             # A slot someone else opened under our key since the lookup above.
             _audit("spec_slot_foreign_denied", f"{name}: opened elsewhere", outcome="denied")
@@ -309,10 +317,12 @@ async def _teardown_worker_slot(
     if (slots := _host.chat_slots()) is not None:
         # The seam runs the sequence below: queued work dropped, the slot taken
         # off the registry before any await, the turn ended, the transcript saved
-        # closed; a required save that fails puts the slot back onto a free key.
-        if not await slots.archive(state, slot, require=require_archive):
+        # closed. A save that fails puts the slot back onto a free key, where the
+        # gateway's flush retries it, so a caller that does not require the
+        # archive still loses no conversation.
+        if not await slots.archive(state, slot):
             _audit("spec_slot_archive_failed", name, outcome="denied")
-            return False
+            return not require_archive
         _audit("spec_slot_teardown", name)
         return True
     # Before the cancel below: _run_chat's end-of-turn block would otherwise
