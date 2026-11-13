@@ -107,7 +107,8 @@ class TestNoHostImports(unittest.TestCase):
     def test_every_resolved_name_is_in_the_pinned_table(self) -> None:
         from backend import _host
 
-        pinned = {(m, n) for m, names in _host.HOST_FUNCTIONS.items() for n in names}
+        tables = (_host.HOST_FUNCTIONS, _host.SEAM_PROBES)
+        pinned = {(m, n) for table in tables for m, names in table.items() for n in names}
         used: set[tuple[str, str]] = set()
         for path in sorted(BACKEND.rglob("*.py")):
             used.update(_lookup_pairs(path))
@@ -126,6 +127,16 @@ class TestNoHostImports(unittest.TestCase):
             if _host._host_attr(m, n) is None
         ]
         self.assertEqual(missing, [])
+
+    def test_a_seam_probe_is_never_a_function_the_backend_needs(self) -> None:
+        """A probe answers "is the seam here", so the pinned host may lack it; a name
+        the backend calls must resolve there (the test above), so the two never mix."""
+        from backend import _host
+
+        probes = {(m, n) for m, names in _host.SEAM_PROBES.items() for n in names}
+        needed = {(m, n) for m, names in _host.HOST_FUNCTIONS.items() for n in names}
+        self.assertTrue(probes)
+        self.assertEqual(probes & needed, set())
 
     def test_the_host_shims_import_kiro_crew_only_at_call_time(self) -> None:
         for shim in _SHIMS:

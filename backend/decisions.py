@@ -9,7 +9,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from ._host import atomic_write, bound, config_dir, sdk_level
+from ._host import atomic_write, bound, config_dir, readonly_dirs_seam, sdk_level
 from .parsers import (
     _MAX_DECISION_PROMPT,
     _clean_str,
@@ -36,6 +36,16 @@ READONLY_DIRS_SDK_LEVEL = 7
 _DECISIONS_LEAF = "spec-builder-decisions.json"
 
 
+def _host_fences_trust_dir() -> bool:
+    """Whether this host fences the ``trust/`` that ``app.json`` declares read-only.
+
+    The level and the seam itself, both: every seam of the level-7 batch reports the
+    same level, so a nightly can report 7 before ``agentReadOnlyDirs`` is in it, and
+    moving the record there would leave it writable by any agent.
+    """
+    return sdk_level(bound()) >= READONLY_DIRS_SDK_LEVEL and readonly_dirs_seam()
+
+
 def _decisions_path() -> Path:
     """Decisions this backend has already dispatched to an agent.
 
@@ -51,17 +61,17 @@ def _decisions_path() -> Path:
         directory redirected every read and write this backend makes, because it
         opens the path directly.
 
-    On a host at App Kit seam level 7 or later the record is in this app's data
-    directory, under ``trust/``, which ``app.json`` declares in ``agentReadOnlyDirs``:
-    the host refuses agent file-tool writes under it, seals it read-only in every
-    sandbox mode with its parents guarded against rename, and refuses a spawn over a
-    link on the way to it. An older host ignores that key, so there the record stays
-    where the built-in kept it, under the data home's ``trust/`` (the SEL trust root),
-    which such a host gates as a whole.
+    On a host that fences ``agentReadOnlyDirs`` (App Kit level 7 with that seam in it,
+    :func:`_host_fences_trust_dir`) the record is in this app's data directory, under
+    ``trust/``, which ``app.json`` declares there: the host refuses agent file-tool
+    writes under it, seals it read-only in every sandbox mode with its parents guarded
+    against rename, and refuses a spawn over a link on the way to it. Any other host
+    ignores that key, so there the record stays where the built-in kept it, under the
+    data home's ``trust/`` (the SEL trust root), which such a host gates as a whole.
     """
     if _DECISIONS_PATH is not None:
         return _DECISIONS_PATH
-    if sdk_level(bound()) >= READONLY_DIRS_SDK_LEVEL:
+    if _host_fences_trust_dir():
         return config_dir() / "apps" / "spec-builder" / "data" / "trust" / _DECISIONS_LEAF
     return config_dir() / "trust" / _DECISIONS_LEAF
 
@@ -73,7 +83,7 @@ def _legacy_decisions_path() -> Path | None:
     has pointed :data:`_DECISIONS_PATH` elsewhere, so a redirected record never reads
     the real host's.
     """
-    if _DECISIONS_PATH is not None or sdk_level(bound()) < READONLY_DIRS_SDK_LEVEL:
+    if _DECISIONS_PATH is not None or not _host_fences_trust_dir():
         return None
     return config_dir() / "trust" / _DECISIONS_LEAF
 

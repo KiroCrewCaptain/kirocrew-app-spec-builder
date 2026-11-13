@@ -211,8 +211,8 @@ def config_dir() -> Path:
     ``<data home>/trust/spec-builder-decisions.json``, and read the dashboard's
     ``<data home>/recent_projects.json``. Those locations are kept, so an
     existing user's specs, settings and recorded answers are found where they
-    are; on a host at App Kit level 7 the decision record moves, once, into the
-    data directory's ``trust/`` (``decisions._decisions_path``). The gateway hands an app ``ctx.data_dir = <data home>/apps/<app>/data``;
+    are; on a host that fences ``agentReadOnlyDirs`` the decision record moves, once,
+    into the data directory's ``trust/`` (``decisions._decisions_path``). The gateway hands an app ``ctx.data_dir = <data home>/apps/<app>/data``;
     a context whose data directory does not have that shape is refused, never
     resolved to some other directory.
     """
@@ -290,7 +290,7 @@ async def require_owner(request: Any, operation: str) -> Any | None:
 
 
 def chat_slots(ctx: Any | None = None) -> Any | None:
-    """``ctx.chat_slots`` (App Kit level 8) when the context carries it, else ``None``.
+    """``ctx.chat_slots`` (an App Kit level-7 seam) when the context carries it, else ``None``.
 
     The public seam for this app's own chat slots: open and restore a spec's
     worker, start or queue its turns, reserve, stop and archive it, read its
@@ -302,6 +302,25 @@ def chat_slots(ctx: Any | None = None) -> Any | None:
     """
     seam = getattr(bound() if ctx is None else ctx, "chat_slots", None)
     return seam if callable(getattr(seam, "send", None)) else None
+
+
+#: Gateway names that prove a seam is present where the level cannot: every seam of
+#: one batch shares a level, and a nightly reports it before each of them has merged.
+#: Probes, not functions this backend calls, so the pinned test host need not have them.
+SEAM_PROBES: dict[str, tuple[str, ...]] = {
+    "kiro_crew.apps.agent_readonly_dirs": ("MANIFEST_KEY",),
+}
+
+
+def readonly_dirs_seam() -> bool:
+    """Whether the gateway fences a manifest's ``agentReadOnlyDirs`` (an App Kit level-7 seam).
+
+    A host reporting level 7 can still ignore the key, because level 7 is shared by
+    several seams that merge separately. The seam's own module, naming that key, is
+    the proof.
+    """
+    key = _host_attr("kiro_crew.apps.agent_readonly_dirs", "MANIFEST_KEY")
+    return key == "agentReadOnlyDirs"
 
 
 #: The gateway names ``ctx.chat_slots`` stands in for: on a gateway with the seam,

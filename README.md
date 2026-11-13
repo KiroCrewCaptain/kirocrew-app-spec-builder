@@ -154,8 +154,8 @@ page open.
   choice instead. The list of specs and those settings are in
   `~/.kiro/crew/workspace/spec-builder/`, the answers you recorded are in
   `~/.kiro/crew/apps/spec-builder/data/trust/spec-builder-decisions.json`
-  (`~/.kiro/crew/trust/spec-builder-decisions.json` on a Kiro Crew below App Kit
-  level 7; both under the folder you chose for Kiro Crew's data, if you moved it),
+  (`~/.kiro/crew/trust/spec-builder-decisions.json` on a Kiro Crew without App Kit
+  level 7's read-only directories; both under the folder you chose for Kiro Crew's data, if you moved it),
   and each spec's conversation is
   a chat session of its own, kept with your other sessions.
 - **Model:** **Which model should run spec generation?** in **Settings** picks
@@ -237,7 +237,7 @@ route records (a 0.12.x gateway skips them, so the app's API would answer 404
 there) and `ctx.require_owner` (Start building and Pause), plus `ctx.scrub`
 (redaction of everything shown that the agent or a project wrote), `ctx.audit`
 (the security event log) and `ctx.data_dir`. A spec's agent is a dashboard chat
-session the app drives through `ctx.chat_slots` (App Kit level 8, declared as
+session the app drives through `ctx.chat_slots` (App Kit level 7, declared as
 `permissions.chatSlots`): the turn, its queue, Pause, delete's archive, the
 transcript and the AutoNudge loop for the build. On an older Kiro Crew it reaches
 the chat runner, its session persistence and AutoNudge by name instead. The
@@ -265,8 +265,8 @@ with `app_execution_denied` until the app is trusted.
 of specs or the settings: they live outside the app's own folder (see
 [Settings & data](#settings--data)), so `--purge-data`, which deletes only that
 folder's `data/`, deletes the recorded answers there and nothing else. To remove
-the rest, delete `~/.kiro/crew/workspace/spec-builder/` (and, on a Kiro Crew below
-App Kit level 7, `~/.kiro/crew/trust/spec-builder-decisions.json`) yourself, and the
+the rest, delete `~/.kiro/crew/workspace/spec-builder/` (and, on a Kiro Crew without
+App Kit level 7's read-only directories, `~/.kiro/crew/trust/spec-builder-decisions.json`) yourself, and the
 `.kiro/specs/<name>/` folders in your projects if you want those gone too.
 
 ### Tests
