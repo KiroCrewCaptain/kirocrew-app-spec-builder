@@ -46,9 +46,14 @@ async def _restore_worker_transcript(state: Any, name: str, *, adopt_closed: boo
     being adopted.
     """
     try:
-        restored = await rehydrate_slot_from_history_async(
-            state, _slot_key(name), adopt_closed=adopt_closed
-        )
+        if (slots := _host.chat_slots()) is not None:
+            # The seam answers only a transcript this app owns; a foreign one is
+            # left under the key, where the ownership check below refuses it.
+            restored = await slots.restore(state, _slot_key(name), adopt_closed=adopt_closed)
+        else:
+            restored = await rehydrate_slot_from_history_async(
+                state, _slot_key(name), adopt_closed=adopt_closed
+            )
     except Exception:
         logger.warning("spec %s: restoring the worker transcript failed", name, exc_info=True)
         return
@@ -144,6 +149,13 @@ async def _ensure_worker_slot(
             return None
         slot = existing
         created = False
+    elif (slots := _host.chat_slots()) is not None:
+        try:
+            slot, created = slots.open(state, slot_key)
+        except PermissionError:
+            # A slot someone else opened under our key since the lookup above.
+            _audit("spec_slot_foreign_denied", f"{name}: opened elsewhere", outcome="denied")
+            return None
     else:
         slot = state.get_or_create_slot(name=slot_key, app=APP_NAME)
         created = True
@@ -294,6 +306,15 @@ async def _teardown_worker_slot(
     if getattr(slot, "_app", None) != APP_NAME:
         logger.warning("refusing to tear down slot %s: not owned by %s", slot_key, APP_NAME)
         return True
+    if (slots := _host.chat_slots()) is not None:
+        # The seam runs the sequence below: queued work dropped, the slot taken
+        # off the registry before any await, the turn ended, the transcript saved
+        # closed; a required save that fails puts the slot back onto a free key.
+        if not await slots.archive(state, slot, require=require_archive):
+            _audit("spec_slot_archive_failed", name, outcome="denied")
+            return False
+        _audit("spec_slot_teardown", name)
+        return True
     # Before the cancel below: _run_chat's end-of-turn block would otherwise
     # start the next queued prompt, so the agent would keep writing into a spec
     # directory this request is about to archive.
@@ -321,12 +342,15 @@ async def _teardown_worker_slot(
         # spec from the index (delete) asks for require_archive, because reporting
         # success here would discard a conversation that was never written. The
         # slot is put back so the caller can restore the entry and the user can
-        # retry; callers that do not require the archive keep the old
-        # best-effort behaviour (an abort path has already lost the race).
+        # retry, but only onto a free key: an opener may have minted a slot under
+        # it since the pop, and overwriting that one would lose it instead.
+        # Callers that do not require the archive stay best-effort (an abort
+        # path has already lost the race).
         logger.warning("closing save failed for %s", slot_key, exc_info=True)
         if require_archive:
             try:
-                state._slots[slot_key] = slot
+                if state._slots.get(slot_key) is None:
+                    state._slots[slot_key] = slot
             except Exception:
                 logger.warning("could not restore slot %s after a failed archive", slot_key)
             _audit("spec_slot_archive_failed", name, outcome="denied")
@@ -358,6 +382,12 @@ async def _halt_active_turn(state: Any, name: str, *, only_slot: Any = _UNPINNED
     # this app's Stop button, losing that turn's response.
     if getattr(slot, "_app", None) != APP_NAME:
         return False
+    if (slots := _host.chat_slots()) is not None:
+        # The seam runs the sequence below: queued work dropped before both
+        # stops, the cooperative stop skipped while a compaction holds the
+        # session, then the worker task cancelled.
+        await slots.stop_turn(state, slot)
+        return True
     _history_key_for = _host.require("kiro_crew.dashboard.chat_utils", "_history_key_for")
     session_key = _history_key_for(slot.key)
     # Before BOTH stops below. The cooperative stop_turn also ends the turn, so
@@ -404,6 +434,20 @@ def _dispatch_turn(
     on_irreversibly_consumed: Callable[[], Awaitable[None] | None] | None = None,
 ) -> asyncio.Task[Any] | None:
     """Relay a turn into the spec's agent slot with its structural provenance."""
+    if (slots := _host.chat_slots()) is not None:
+        # The seam starts the bounded turn or queues behind the running one, with
+        # the containment stamp and a redacted ``queued`` row, as below.
+        return slots.send(
+            state,
+            slot,
+            message,
+            meta=message_meta,
+            append_user=append_user,
+            user_origin=directive_user_origin,
+            typed=message_is_typed,
+            on_consumed=on_consumed,
+            on_irreversibly_consumed=on_irreversibly_consumed,
+        )
     if getattr(slot, "running", False):
         try:
             # Deferred to avoid the dashboard import cycle. A spec slot is
@@ -484,6 +528,8 @@ def _reserve_slot_turn(state: Any, slot: Any) -> asyncio.Task[Any] | None:
     callers therefore pass the returned identity through to the final dispatch gate.
     The done callback only clears its own reservation and cannot erase such a turn.
     """
+    if (slots := _host.chat_slots()) is not None:
+        return slots.reserve(state, slot)
     if getattr(slot, "running", False):
         return None
     reservation = asyncio.current_task()
@@ -525,7 +571,12 @@ async def _serialize_messages(state: Any, slot_key: str) -> list[dict]:
     """
     msgs: list[Any] = []
     slot = state.get_slot(slot_key)
-    if slot is not None and getattr(slot, "messages", None):
+    if (slots := _host.chat_slots()) is not None:
+        try:
+            msgs = await slots.transcript(state, slot_key)
+        except Exception:
+            logger.debug("read_messages failed for %s", slot_key, exc_info=True)
+    elif slot is not None and getattr(slot, "messages", None):
         msgs = list(slot.messages)
     else:
         try:

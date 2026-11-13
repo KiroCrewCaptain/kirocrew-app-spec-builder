@@ -289,6 +289,37 @@ async def require_owner(request: Any, operation: str) -> Any | None:
     return await gate(request, operation)
 
 
+def chat_slots(ctx: Any | None = None) -> Any | None:
+    """``ctx.chat_slots`` (App Kit level 8) when the context carries it, else ``None``.
+
+    The public seam for this app's own chat slots: open and restore a spec's
+    worker, start or queue its turns, reserve, stop and archive it, read its
+    transcript, and arm, find and remove its AutoNudge loops. A gateway that has
+    it hands it to a manifest that declares ``permissions.chatSlots``. On an older
+    gateway this answers ``None`` and the backend reaches the same functions by
+    name (``HOST_FUNCTIONS``), as the built-in did. *ctx* defaults to the bound
+    context.
+    """
+    seam = getattr(bound() if ctx is None else ctx, "chat_slots", None)
+    return seam if callable(getattr(seam, "send", None)) else None
+
+
+#: The gateway names ``ctx.chat_slots`` stands in for: on a gateway with the seam,
+#: one of these moving does not stop a spec.
+_SLOT_SEAM_NAMES: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("kiro_crew.dashboard.chat_runner", "_run_chat"),
+        ("kiro_crew.dashboard.chat_utils", "_history_key_for"),
+        ("kiro_crew.dashboard.chat_persistence", "save_slot_off_loop"),
+        ("kiro_crew.dashboard.chat_persistence", "rehydrate_slot_from_history_async"),
+        ("kiro_crew.dashboard.session_control", "containment_meta"),
+        ("kiro_crew.session_lifecycle", "compaction_in_flight"),
+        ("kiro_crew.autonudge", "get_instance"),
+        ("kiro_crew.autonudge_authz", "authorize_and_add_nudge"),
+    }
+)
+
+
 def capability_issues(ctx: Any) -> list[str]:
     """What this gateway lacks, as the sentences ``ctx.health`` reports."""
     issues: list[str] = []
@@ -299,7 +330,10 @@ def capability_issues(ctx: Any) -> list[str]:
         )
     if not callable(getattr(getattr(ctx, "scrub", None), "outbound", None)):
         issues.append("no outbound scrubber: every document and transcript is withheld")
-    missing = [f"{m}.{n}" for m, n in _CORE_NAMES if _host_attr(m, n) is None]
+    seamed = _SLOT_SEAM_NAMES if chat_slots(ctx) is not None else frozenset()
+    missing = [
+        f"{m}.{n}" for m, n in _CORE_NAMES if (m, n) not in seamed and _host_attr(m, n) is None
+    ]
     if missing:
         issues.append("gateway functions missing: " + ", ".join(missing))
     return issues

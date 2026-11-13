@@ -28,7 +28,8 @@
       "/api/chat",
       "/api/chat/*"
     ],
-    "storage": true
+    "storage": true,
+    "chatSlots": true
   },
   "agentReadOnlyDirs": [
     "trust"

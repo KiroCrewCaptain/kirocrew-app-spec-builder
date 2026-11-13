@@ -90,13 +90,25 @@ it imported inside a function are resolved when the operation runs
 (`_host.require`), and a missing one fails that operation. `register_routes`
 reports what is missing through `ctx.health` (`_host.capability_issues`).
 
+**The chat slot rows have a seam now.** On a gateway with `ctx.chat_slots` (App
+Kit level 8, `permissions.chatSlots` in `app.json`, declared by the built-in's
+manifest too), the first five rows below go through it instead: `_host.chat_slots()`
+reads it off the bound context, `runtime.py` opens, restores, sends, reserves,
+stops, archives and reads the worker through it after its own identity checks, and
+`orchestration/execution_state.py` and `execution.py` find, remove and arm the
+execution loop through its AutoNudge view (only this app's loops) and
+`arm_nudge`, which names the `app:spec-builder` source itself. The names are then
+not counted as missing by `capability_issues`. An older gateway answers no
+`chat_slots`, and the backend resolves those names as below.
+`tests/test_chat_slot_seam.py` pins each operation on the seam.
+
 | Name | Built-in use | Without it | Seam Kiro Crew needs |
 |---|---|---|---|
-| `kiro_crew.dashboard.chat_runner._run_chat`, `_start_next_queued_turn`; `kiro_crew.dashboard.turn_dispatch.bounded_chat_turn`; `kiro_crew.constants.CHAT_TURN_TIMEOUT` | relaying a seed, decision, task or handoff turn into the spec's slot, and draining a queue a refused reservation left (`backend/runtime.py:22`, `:445-450`, `:515`) | no turn is dispatched (the request fails before anything is appended); without `bounded_chat_turn` the host ceiling applies | an app-owned chat slot API: send a turn with its provenance (typed / composed, user origin), queue behind a running one |
-| `kiro_crew.dashboard.session_control.containment_meta` | stamping a queued message on the app-scoped slot (`backend/runtime.py:422`) | the message is not queued (as when the stamp failed in the built-in) | the same slot API's queue call |
-| `kiro_crew.dashboard.chat_persistence.rehydrate_slot_from_history_async`, `save_slot_off_loop`; `kiro_crew.dashboard.chat_utils._history_key_for`; `kiro_crew.session_lifecycle.compaction_in_flight` | restoring a cold spec slot's transcript, archiving it on delete, reading the persisted transcript, and skipping the cooperative stop while the session compacts (`backend/runtime.py:15-16`, `:321`, `:368`, `:544`) | no restore (a fresh slot is made, as on a failed restore); delete refuses rather than drop an unarchived conversation; Pause stops nothing and discards nothing; without the compaction probe Pause cancels the worker task only | slot restore / archive / transcript-read calls on the same slot API, and a "stop this slot's turn" call that answers whether it was declined |
-| `request.app["state"]`: `get_or_create_slot`, `get_slot`, `_slots`, `sessions.stop_turn`, `conversation_log`, `push_slot_title`, `push_slots_update`, `_background_tasks`; slot attributes `_app`, `_titled`, `task`, `running`, `_queue`; two bookkeeping sets the app keeps on the state (`_spec_decision_deliveries_*`) | the spec worker slot's whole lifecycle (`backend/runtime.py`, `backend/handlers.py`, `backend/orchestration/*.py`) | read off the gateway's application exactly as the built-in did, feature-detected where used: no state, no worker | the same slot API, owned and scoped by app provenance |
-| `kiro_crew.autonudge.AutoNudgeService`, `get_instance`; `kiro_crew.autonudge_authz.authorize_and_add_nudge` | arming, finding and removing the execution loop that drives Start building (`backend/orchestration/execution_state.py:37-39`) | Start building answers 503 `autonudge_unavailable`; Pause and delete still halt the turn | an AutoNudge loop API scoped to the app's own slots |
+| `kiro_crew.dashboard.chat_runner._run_chat`, `_start_next_queued_turn`; `kiro_crew.dashboard.turn_dispatch.bounded_chat_turn`; `kiro_crew.constants.CHAT_TURN_TIMEOUT` | relaying a seed, decision, task or handoff turn into the spec's slot, and draining a queue a refused reservation left (`backend/runtime.py:22`, `:445-450`, `:515`) | no turn is dispatched (the request fails before anything is appended); without `bounded_chat_turn` the host ceiling applies | `ctx.chat_slots` (level 8) |
+| `kiro_crew.dashboard.session_control.containment_meta` | stamping a queued message on the app-scoped slot (`backend/runtime.py:422`) | the message is not queued (as when the stamp failed in the built-in) | `ctx.chat_slots` (level 8) |
+| `kiro_crew.dashboard.chat_persistence.rehydrate_slot_from_history_async`, `save_slot_off_loop`; `kiro_crew.dashboard.chat_utils._history_key_for`; `kiro_crew.session_lifecycle.compaction_in_flight` | restoring a cold spec slot's transcript, archiving it on delete, reading the persisted transcript, and skipping the cooperative stop while the session compacts (`backend/runtime.py:15-16`, `:321`, `:368`, `:544`) | no restore (a fresh slot is made, as on a failed restore); delete refuses rather than drop an unarchived conversation; Pause stops nothing and discards nothing; without the compaction probe Pause cancels the worker task only | `ctx.chat_slots` (level 8) |
+| `request.app["state"]`: `get_or_create_slot`, `get_slot`, `_slots`, `sessions.stop_turn`, `conversation_log`, `push_slot_title`, `push_slots_update`, `_background_tasks`; slot attributes `_app`, `_titled`, `task`, `running`, `_queue`; two bookkeeping sets the app keeps on the state (`_spec_decision_deliveries_*`) | the spec worker slot's whole lifecycle (`backend/runtime.py`, `backend/handlers.py`, `backend/orchestration/*.py`) | read off the gateway's application exactly as the built-in did, feature-detected where used: no state, no worker | `ctx.chat_slots` (level 8) |
+| `kiro_crew.autonudge.AutoNudgeService`, `get_instance`; `kiro_crew.autonudge_authz.authorize_and_add_nudge` | arming, finding and removing the execution loop that drives Start building (`backend/orchestration/execution_state.py:37-39`) | Start building answers 503 `autonudge_unavailable`; Pause and delete still halt the turn | `ctx.chat_slots` (level 8) |
 | `kiro_crew.sandbox.sandboxed_spawn_argv`, `create_subprocess_limited`, `shielded_prepare_off_loop` | every `git` child (worktree create, `rev-parse`, status) (`backend/repository.py:49-57`, `backend/repository_git.py`) | no `git` runs: the worktree option and the repository probe report git unavailable | an app-scoped sandboxed subprocess on the context |
 | `kiro_crew.sel.sel` (`log_tool_invocation(critical=True)`) | the fail-closed "invoked" record that must land before `git` runs (`backend/repository.py:37`, `:152-169`) | no `git` runs | a critical (fail-closed) variant of `ctx.audit`; the seam's docstring names this as the route until one exists |
 | `kiro_crew.hooks.safe_read_file_bytes_nolink`, `kiro_crew.pinned_fs.fd_real_path` | no-follow reads of the spec documents and the descriptor-pinned directory checks (`backend/repository.py:42-46`) | no document is served and every pinned check refuses | no-follow read and pinned-directory helpers on the context |
@@ -106,8 +118,8 @@ reports what is missing through `ctx.health` (`_host.capability_issues`).
 
 ## Remaining gaps
 
-1. **The gateway functions above.** Each is a private name a Kiro Crew refactor
-   can move; the stand-ins keep that failure closed and reported
+1. **The gateway functions above.** On a gateway without `ctx.chat_slots`, each
+   is a private name a Kiro Crew refactor can move; the stand-ins keep that failure closed and reported
    (`ctx.health`), but planning and building stop until the name is back or a
    seam replaces it. `minKiroCrewVersion` and the capability report are the
    only guards.

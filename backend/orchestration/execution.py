@@ -39,11 +39,11 @@ from .dispatch_claims import (
 from .execution_state import (
     _CLAIM_OK,
     _EXEC_MAX_CYCLES,
-    _autonudge_instance,
     _claim_execution,
     _exec_loop_id,
     _exec_prompt,
     _halt_execution,
+    _nudge_service,
     _remove_nudge_loop_for_slot,
     authorize_and_add_nudge,
 )
@@ -138,8 +138,9 @@ async def _handle_handoff(request: web.Request) -> web.Response:
     # FAIL CLOSED. Falling through to a single turn would bypass the authorization
     # chokepoint, including slot ownership, message bounds, sentinel checks and SEL
     # audit. An unauthorized run is not a degraded run.
-    svc = _autonudge_instance() if _autonudge_instance is not None else None
-    if svc is None or authorize_and_add_nudge is None:
+    slots = _host.chat_slots()
+    svc = _nudge_service()
+    if svc is None or (slots is None and authorize_and_add_nudge is None):
         _audit("spec_handoff_denied", f"{name}: autonudge unavailable", outcome="denied")
         return web.json_response(
             {
@@ -405,17 +406,30 @@ async def _handle_handoff(request: web.Request) -> web.Response:
             )
         handoff_alias_snapshot = _alias_turn_snapshot(state, handoff_aliases)
         try:
-            armed_loop, authz_err, _status = await authorize_and_add_nudge(
-                svc=svc,
-                state=state,
-                slot_key=slot.key,
-                message=prompt,
-                idle_secs=120,
-                max_cycles=_EXEC_MAX_CYCLES,
-                stop_sentinel_path=sentinel_path,
-                source="app:spec-builder",
-                caller=str(request.get("user") or ""),
-            )
+            if slots is not None:
+                # The same chokepoint, reached through the seam, which names the
+                # source ``app:spec-builder`` itself.
+                armed_loop, authz_err, _status = await slots.arm_nudge(
+                    state,
+                    slot,
+                    message=prompt,
+                    idle_secs=120,
+                    max_cycles=_EXEC_MAX_CYCLES,
+                    stop_sentinel_path=sentinel_path,
+                    caller=str(request.get("user") or ""),
+                )
+            else:
+                armed_loop, authz_err, _status = await authorize_and_add_nudge(
+                    svc=svc,
+                    state=state,
+                    slot_key=slot.key,
+                    message=prompt,
+                    idle_secs=120,
+                    max_cycles=_EXEC_MAX_CYCLES,
+                    stop_sentinel_path=sentinel_path,
+                    source="app:spec-builder",
+                    caller=str(request.get("user") or ""),
+                )
         except Exception:
             logger.warning("autonudge arm raised for %s — refusing handoff", name, exc_info=True)
             await _release("authorization raised")
