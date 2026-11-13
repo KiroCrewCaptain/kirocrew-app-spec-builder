@@ -1,4 +1,4 @@
-"""On a gateway with ``ctx.chat_slots`` (App Kit level 8) a spec's worker runs on it.
+"""On a gateway with ``ctx.chat_slots`` (an App Kit level-7 seam) a spec's worker runs on it.
 
 The seam is Kiro Crew's public door to the chat slot functions this backend
 otherwise resolves by name: create and restore the worker, start or queue its

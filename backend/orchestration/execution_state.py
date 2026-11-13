@@ -53,7 +53,7 @@ _ORPHAN_QUIESCE_TIMEOUT_SECS = 2.0
 def _nudge_service() -> Any | None:
     """The AutoNudge loops this app reads, or ``None`` when AutoNudge is not running.
 
-    On a gateway with ``ctx.chat_slots`` (App Kit level 8) it is the seam's view,
+    On a gateway with ``ctx.chat_slots`` (an App Kit level-7 seam) it is the seam's view,
     which holds only the loops on this app's own slots; on an older one it is the
     gateway's service, resolved by name. Both answer ``get_by_slot``, ``list_all``
     and ``remove`` the same way.

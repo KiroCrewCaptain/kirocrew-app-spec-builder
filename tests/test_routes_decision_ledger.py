@@ -199,7 +199,7 @@ def test_the_ledger_is_not_under_the_apps_own_state_dir(tmp_path, monkeypatch):
     from kiro_crew import security
 
     # Write-fenced at either location: the keystone's ``trust/`` on an older host, the
-    # app's declared read-only ``trust/`` on a host at App Kit level 7.
+    # app's declared read-only ``trust/`` on a host that fences ``agentReadOnlyDirs``.
     assert security.is_sensitive_write_path(str(path))
     assert security.is_sensitive_write_path(str(path.parent))
 
@@ -213,12 +213,13 @@ def test_the_app_declares_the_ledger_directory_read_only_to_agents():
 
 
 def _level_seven_home(monkeypatch, tmp_path):
-    """A host at App Kit level 7 whose data home is *tmp_path*: (old path, new path)."""
+    """A level-7 host with ``agentReadOnlyDirs``, data home *tmp_path*: (old path, new path)."""
     from backend import decisions
 
     monkeypatch.setattr(routes, "_DECISIONS_PATH", None)
     monkeypatch.setattr(decisions, "config_dir", lambda: tmp_path)
     monkeypatch.setattr(decisions, "sdk_level", lambda _ctx: decisions.READONLY_DIRS_SDK_LEVEL)
+    monkeypatch.setattr(decisions, "readonly_dirs_seam", lambda: True)
     return tmp_path / "trust" / "spec-builder-decisions.json", routes._decisions_path()
 
 
@@ -236,6 +237,40 @@ def test_an_older_host_keeps_the_ledger_where_it_gates_it(tmp_path, monkeypatch)
     monkeypatch.setattr(decisions, "config_dir", lambda: tmp_path)
     monkeypatch.setattr(decisions, "sdk_level", lambda _ctx: decisions.READONLY_DIRS_SDK_LEVEL - 1)
     assert routes._decisions_path() == tmp_path / "trust" / "spec-builder-decisions.json"
+
+
+def test_a_level_seven_host_without_the_seam_keeps_the_ledger_on_its_keystone(
+    tmp_path, monkeypatch
+):
+    """Level 7 is shared by seams that merge separately, so the level alone proves nothing.
+
+    A nightly can report 7 before ``agentReadOnlyDirs`` is in it; moving the record into
+    the declared directory there would leave it writable by any agent.
+    """
+    from backend import decisions
+
+    monkeypatch.setattr(routes, "_DECISIONS_PATH", None)
+    monkeypatch.setattr(decisions, "config_dir", lambda: tmp_path)
+    monkeypatch.setattr(decisions, "sdk_level", lambda _ctx: decisions.READONLY_DIRS_SDK_LEVEL)
+    monkeypatch.setattr(decisions, "readonly_dirs_seam", lambda: False)
+    assert routes._decisions_path() == tmp_path / "trust" / "spec-builder-decisions.json"
+    assert decisions._legacy_decisions_path() is None
+
+
+def test_the_seam_probe_reads_the_seam_module(monkeypatch):
+    """Present only when the gateway's ``agent_readonly_dirs`` module names the key."""
+    from backend import _host
+
+    lookups = []
+
+    def host_attr(module, name, answer):
+        lookups.append((module, name))
+        return answer
+
+    for answer, expected in (("agentReadOnlyDirs", True), (None, False), ("other", False)):
+        monkeypatch.setattr(_host, "_host_attr", lambda m, n, a=answer: host_attr(m, n, a))
+        assert _host.readonly_dirs_seam() is expected
+    assert set(lookups) == {("kiro_crew.apps.agent_readonly_dirs", "MANIFEST_KEY")}
 
 
 def test_a_level_six_host_does_not_fence_the_declared_directory(tmp_path, monkeypatch):

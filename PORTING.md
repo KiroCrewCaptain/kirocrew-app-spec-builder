@@ -46,7 +46,7 @@ needs is resolved by its existing name, and listed.
   app's state under `<data home>/workspace/spec-builder/` (`index.json`,
   `deleted.json`, `settings.json`), the decision record at
   `<data home>/apps/spec-builder/data/trust/spec-builder-decisions.json` on a host
-  at App Kit level 7 (moved there once from the built-in's
+  at App Kit level 7 that fences `agentReadOnlyDirs` (moved there once from the built-in's
   `<data home>/trust/spec-builder-decisions.json`, where an older host keeps it),
   and each spec's conversation
   in the chat slot `spec-builder-<name>-<8 hex>` with app provenance
@@ -91,8 +91,8 @@ it imported inside a function are resolved when the operation runs
 reports what is missing through `ctx.health` (`_host.capability_issues`).
 
 **The chat slot rows have a seam now.** On a gateway with `ctx.chat_slots` (App
-Kit level 8, `permissions.chatSlots` in `app.json`, declared by the built-in's
-manifest too), the first five rows below go through it instead: `_host.chat_slots()`
+Kit level 7, `permissions.chatSlots` in `app.json`, declared by the built-in's
+manifest too; detected by the attribute, never the level), the first five rows below go through it instead: `_host.chat_slots()`
 reads it off the bound context, `runtime.py` opens, restores, sends, reserves,
 stops, archives and reads the worker through it after its own identity checks, and
 `orchestration/execution_state.py` and `execution.py` find, remove and arm the
@@ -104,11 +104,11 @@ not counted as missing by `capability_issues`. An older gateway answers no
 
 | Name | Built-in use | Without it | Seam Kiro Crew needs |
 |---|---|---|---|
-| `kiro_crew.dashboard.chat_runner._run_chat`, `_start_next_queued_turn`; `kiro_crew.dashboard.turn_dispatch.bounded_chat_turn`; `kiro_crew.constants.CHAT_TURN_TIMEOUT` | relaying a seed, decision, task or handoff turn into the spec's slot, and draining a queue a refused reservation left (`backend/runtime.py:22`, `:445-450`, `:515`) | no turn is dispatched (the request fails before anything is appended); without `bounded_chat_turn` the host ceiling applies | `ctx.chat_slots` (level 8) |
-| `kiro_crew.dashboard.session_control.containment_meta` | stamping a queued message on the app-scoped slot (`backend/runtime.py:422`) | the message is not queued (as when the stamp failed in the built-in) | `ctx.chat_slots` (level 8) |
-| `kiro_crew.dashboard.chat_persistence.rehydrate_slot_from_history_async`, `save_slot_off_loop`; `kiro_crew.dashboard.chat_utils._history_key_for`; `kiro_crew.session_lifecycle.compaction_in_flight` | restoring a cold spec slot's transcript, archiving it on delete, reading the persisted transcript, and skipping the cooperative stop while the session compacts (`backend/runtime.py:15-16`, `:321`, `:368`, `:544`) | no restore (a fresh slot is made, as on a failed restore); delete refuses rather than drop an unarchived conversation; Pause stops nothing and discards nothing; without the compaction probe Pause cancels the worker task only | `ctx.chat_slots` (level 8) |
-| `request.app["state"]`: `get_or_create_slot`, `get_slot`, `_slots`, `sessions.stop_turn`, `conversation_log`, `push_slot_title`, `push_slots_update`, `_background_tasks`; slot attributes `_app`, `_titled`, `task`, `running`, `_queue`; two bookkeeping sets the app keeps on the state (`_spec_decision_deliveries_*`) | the spec worker slot's whole lifecycle (`backend/runtime.py`, `backend/handlers.py`, `backend/orchestration/*.py`) | read off the gateway's application exactly as the built-in did, feature-detected where used: no state, no worker | `ctx.chat_slots` (level 8) |
-| `kiro_crew.autonudge.AutoNudgeService`, `get_instance`; `kiro_crew.autonudge_authz.authorize_and_add_nudge` | arming, finding and removing the execution loop that drives Start building (`backend/orchestration/execution_state.py:37-39`) | Start building answers 503 `autonudge_unavailable`; Pause and delete still halt the turn | `ctx.chat_slots` (level 8) |
+| `kiro_crew.dashboard.chat_runner._run_chat`, `_start_next_queued_turn`; `kiro_crew.dashboard.turn_dispatch.bounded_chat_turn`; `kiro_crew.constants.CHAT_TURN_TIMEOUT` | relaying a seed, decision, task or handoff turn into the spec's slot, and draining a queue a refused reservation left (`backend/runtime.py:22`, `:445-450`, `:515`) | no turn is dispatched (the request fails before anything is appended); without `bounded_chat_turn` the host ceiling applies | `ctx.chat_slots` (level 7) |
+| `kiro_crew.dashboard.session_control.containment_meta` | stamping a queued message on the app-scoped slot (`backend/runtime.py:422`) | the message is not queued (as when the stamp failed in the built-in) | `ctx.chat_slots` (level 7) |
+| `kiro_crew.dashboard.chat_persistence.rehydrate_slot_from_history_async`, `save_slot_off_loop`; `kiro_crew.dashboard.chat_utils._history_key_for`; `kiro_crew.session_lifecycle.compaction_in_flight` | restoring a cold spec slot's transcript, archiving it on delete, reading the persisted transcript, and skipping the cooperative stop while the session compacts (`backend/runtime.py:15-16`, `:321`, `:368`, `:544`) | no restore (a fresh slot is made, as on a failed restore); delete refuses rather than drop an unarchived conversation; Pause stops nothing and discards nothing; without the compaction probe Pause cancels the worker task only | `ctx.chat_slots` (level 7) |
+| `request.app["state"]`: `get_or_create_slot`, `get_slot`, `_slots`, `sessions.stop_turn`, `conversation_log`, `push_slot_title`, `push_slots_update`, `_background_tasks`; slot attributes `_app`, `_titled`, `task`, `running`, `_queue`; two bookkeeping sets the app keeps on the state (`_spec_decision_deliveries_*`) | the spec worker slot's whole lifecycle (`backend/runtime.py`, `backend/handlers.py`, `backend/orchestration/*.py`) | read off the gateway's application exactly as the built-in did, feature-detected where used: no state, no worker | `ctx.chat_slots` (level 7) |
+| `kiro_crew.autonudge.AutoNudgeService`, `get_instance`; `kiro_crew.autonudge_authz.authorize_and_add_nudge` | arming, finding and removing the execution loop that drives Start building (`backend/orchestration/execution_state.py:37-39`) | Start building answers 503 `autonudge_unavailable`; Pause and delete still halt the turn | `ctx.chat_slots` (level 7) |
 | `kiro_crew.sandbox.sandboxed_spawn_argv`, `create_subprocess_limited`, `shielded_prepare_off_loop` | every `git` child (worktree create, `rev-parse`, status) (`backend/repository.py:49-57`, `backend/repository_git.py`) | no `git` runs: the worktree option and the repository probe report git unavailable | an app-scoped sandboxed subprocess on the context |
 | `kiro_crew.sel.sel` (`log_tool_invocation(critical=True)`) | the fail-closed "invoked" record that must land before `git` runs (`backend/repository.py:37`, `:152-169`) | no `git` runs | a critical (fail-closed) variant of `ctx.audit`; the seam's docstring names this as the route until one exists |
 | `kiro_crew.hooks.safe_read_file_bytes_nolink`, `kiro_crew.pinned_fs.fd_real_path` | no-follow reads of the spec documents and the descriptor-pinned directory checks (`backend/repository.py:42-46`) | no document is served and every pinned check refuses | no-follow read and pinned-directory helpers on the context |
@@ -133,9 +133,11 @@ not counted as missing by `capability_issues`. An older gateway answers no
    so an agent cannot erase or forge a recorded answer. `app.json` now declares
    `trust` in `agentReadOnlyDirs` (App Kit seam level 7, App Kit spec §39), and
    on such a host the record lives in `<data dir>/trust/` and is moved there once
-   from the old location (copy first, remove after). A host below level 7
-   ignores the key, so there the record stays under the data home's `trust/`,
-   which that host gates.
+   from the old location (copy first, remove after). Level 7 is shared by seams
+   that merge separately, so the app also checks the seam itself
+   (`_host.readonly_dirs_seam`, the gateway's `kiro_crew.apps.agent_readonly_dirs`
+   module) and never trusts the level alone. Any other host ignores the key, so
+   there the record stays under the data home's `trust/`, which that host gates.
 4. **Slot-mode and sidebar.** Spec slots are created with `app="spec-builder"`
    and the default mode, exactly as the built-in did; they show in the chat
    sidebar's app grouping as before. No core literal names this app's mode.
@@ -178,8 +180,9 @@ not counted as missing by `capability_issues`. An older gateway answers no
     Its state stays in `<data home>/workspace/spec-builder/`, the built-in's
     location, so an existing user's specs survive adoption, and a purge leaves
     it behind; the README says so and names the path to delete by hand. On a
-    host at App Kit level 7 the decision record is in the data directory (gap 3),
-    so a purge removes it; below level 7 it stays under the data home's `trust/`.
+    host that fences `agentReadOnlyDirs` the decision record is in the data
+    directory (gap 3), so a purge removes it; elsewhere it stays under the data
+    home's `trust/`.
     Moving the state into `ctx.data_dir` would lose an adopted user's data; the
     generic fix is an App Kit seam through which an app declares the data paths
     it owns outside `ctx.data_dir`, so a purge removes them too.
