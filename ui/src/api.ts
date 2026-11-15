@@ -8,6 +8,8 @@
 // path outside the manifest's grant. A non-2xx surfaces from that client as an
 // error carrying the status and the raw body; it is read back here into a
 // `SpecApiError` carrying the backend's own `error` sentence and `code`.
+import type { ChatEmbedSendMeta } from '@kirocrew/app-sdk'
+
 const API = '/api/apps/spec-builder'
 
 /** Shown in the rail footer: app.json's version. */
@@ -292,11 +294,18 @@ export const specApi = {
   // spec_dir. The backend compares both and refuses a mismatch, because a
   // directory alone does not identify a creation -- delete leaves the documents on
   // disk, so a re-import under the same name and path is a DIFFERENT spec.
-  message: (name: string, text: string, id?: SpecIdentity) =>
-    req<void>('/specs/' + enc(name) + '/message', {
+  // Forward only the embed metadata this endpoint stores: collapsed pastes keep
+  // their chips, and sendId lets the embed reconcile an ambiguous send by identity.
+  message: (name: string, text: string, id?: SpecIdentity, meta?: ChatEmbedSendMeta) => {
+    const sentMeta = {
+      ...(meta?.pastes?.length ? { pastes: meta.pastes } : {}),
+      ...(typeof meta?.sendId === 'string' ? { sendId: meta.sendId } : {}),
+    }
+    return req<void>('/specs/' + enc(name) + '/message', {
       method: 'POST',
-      body: JSON.stringify({ text, ...identity(id) }),
-    }),
+      body: JSON.stringify({ text, ...identity(id), ...(Object.keys(sentMeta).length ? { meta: sentMeta } : {}) }),
+    })
+  },
   // A decision card's answer, sent with the decision's id so the backend can
   // record it and refuse a second answer for the same decision. Same endpoint as
   // `message` — the id is what makes the write one-way.
