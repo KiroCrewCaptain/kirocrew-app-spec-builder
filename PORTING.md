@@ -26,7 +26,8 @@ needs is resolved by its existing name, and listed.
 
 ## What carried over unchanged
 
-- `app.json` `name` (`spec-builder`), `version` (`0.1.0`), `author`,
+- `app.json` `name` (`spec-builder`), `version` (`0.1.0` at the port, released
+  here since; see below), `author`,
   `permissions` (`api: ["/api/apps/spec-builder", "/api/apps/spec-builder/*",
   "/api/chat", "/api/chat/*"]`, `storage: true`), `skills`, `platform`,
   `defaultEnabled: false`, `tags`, `displayName`, `description`, `useCases` and
@@ -212,6 +213,12 @@ The rest of kirodotdev/KiroCrew#30091 moves the built-in's cases of core tests i
 the built-in's own suite; `tests/test_host_cases_ported.py` already carries them.
 The suite's Kiro Crew test dependency moves to `af94fac51f` with these, so the new
 host names resolve on the host it runs against.
+
+## Releases
+
+| Release | What it carries |
+|---|---|
+| `0.1.1` | Every built-in fix above, the chat slot seam (`ctx.chat_slots`) and the decision record in the manifest-declared read-only `trust/`, both feature-detected. It needs App Kit seam level 7 on the host that adopts it (`minAppSdkLevel` 7), and the wheel copy moves to `0.1.1` with the pin |
 
 ## UI
 

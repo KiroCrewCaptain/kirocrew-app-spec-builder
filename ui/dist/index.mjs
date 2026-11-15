@@ -212,7 +212,7 @@ var i18nT = t;
 // src/api.ts
 var API = "/api/apps/spec-builder";
 /** Shown in the rail footer: app.json's version. */
-var APP_VERSION = "0.1.0";
+var APP_VERSION = "0.1.1";
 /** Drop empty fields so an absent value never reads as a claim of "". */
 function identity(id) {
 	const out = {};
