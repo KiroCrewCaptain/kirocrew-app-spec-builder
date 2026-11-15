@@ -115,6 +115,9 @@ not counted as missing by `capability_issues`. An older gateway answers no
 | `kiro_crew.security.is_sensitive_path` | refusing a project folder or spec directory that is a credential store, the data home or a policy file (`backend/parsers.py:21`) | every path is sensitive: no spec can be created | a sensitive-path predicate on the context |
 | `kiro_crew.platform_compat.{IS_MACOS, IS_WINDOWS, RENAME_NOREPLACE_AVAILABLE, rename_noreplace, strip_extended_length_prefix}` | the case-fold of turn keys, the atomic duplicate publish, Windows path comparison (`backend/repository.py:20-24`, `backend/repository_duplicate.py:21`, `backend/orchestration/turn_guard.py:17`) | flags from `sys.platform`; no no-replace rename (duplicating a spec answers "unsupported", as on a platform without one); a lexical prefix stripper | none needed: the App Kit already names `platform_compat` as the module apps route platform decisions through; listed so the table is complete |
 | `kiro_crew.dashboard.handlers.api_models` | (new, `GET /models`, gap 5) | the model picker offers only "Default (inherit)" | an SDK model-list call |
+| `kiro_crew.platform_compat.open_file_no_reparse` | reading the decision record an earlier release left under the data home's `trust/` without following a link planted there (`backend/decisions.py`) | the old record is not read: the store reports unusable rather than read a file that may be a link | none needed (see `platform_compat` above) |
+| `kiro_crew.dashboard.chat_delivery.normalize_send_id` | checking the chat embed's `sendId` before it is stored on the user row (`backend/orchestration/messages.py`) | the id is dropped, as from an older client | a send-id check on the chat slot seam |
+| `kiro_crew.dashboard.slot_buffers.flush_restored_hold` | delivering a note a restart left held on an idle spec slot above the next turn's row, on a gateway without `ctx.chat_slots` (`backend/runtime.py`) | nothing is flushed: such a gateway keeps no restored hold | `ctx.chat_slots` (level 7), which flushes it itself |
 
 ## Remaining gaps
 
@@ -186,6 +189,27 @@ not counted as missing by `capability_issues`. An older gateway answers no
     Moving the state into `ctx.data_dir` would lose an adopted user's data; the
     generic fix is an App Kit seam through which an app declares the data paths
     it owns outside `ctx.data_dir`, so a purge removes them too.
+
+## Built-in fixes carried over after the port
+
+Fixes kept landing in the built-in after the commit this was ported from, and an
+adopted user runs this repository, not the built-in, so each one is carried here.
+Up to Kiro Crew `main` `af94fac51f` (2026-11-14):
+
+| Kiro Crew change | Here |
+|---|---|
+| kirodotdev/KiroCrew#31829: a delete whose transcript archive fails, and Create's recovery of a worker that outlives its cancel, put the slot back only while its key is still free, so a slot opened under that key since is kept | `backend/orchestration/execution_state.py` (the archive half was already here), `tests/test_routes_create.py`, `tests/test_spec_builder_routes_coverage_workers.py` |
+| kirodotdev/KiroCrew#31799, kirodotdev/KiroCrew#23167: a message sent from the spec's chat keeps its collapsed pastes (the paste chips) and its `sendId` on the stored user row, queued or not, so the transcript folds each paste back into its chip and the chat matches an ambiguous send by identity; the id goes through the host's send-id check | `backend/orchestration/messages.py`, `backend/runtime.py`, `backend/_host.py`, `tests/test_routes_message_meta.py`, `tests/test_spec_builder_routes_coverage_lifecycle.py`, `tests/test_spec_builder_routes_coverage_workers.py` |
+| kirodotdev/KiroCrew#33324: a decision answer the host's queue drain folded into one row with another is found by every folded id (`spec_decision_delivery_ids`), so the earlier answer is not dispatched a second time | `backend/orchestration/decision_outbox.py`, `tests/test_decision_outbox_merged_rows.py` |
+| kirodotdev/KiroCrew#34740: a spec name, slot key or approved document hash that ends in a newline is refused instead of read as a second spelling of the same value | `backend/parsers.py`, `tests/test_trailing_newline.py` |
+| kirodotdev/KiroCrew#36128: on a gateway without `ctx.chat_slots`, a note a restart left held on an idle spec slot is delivered above the next turn's row (the seam does it on a gateway that has one) | `backend/runtime.py`, `tests/test_spec_builder_routes_coverage_workers.py` |
+| kirodotdev/KiroCrew#33589: the decision record an earlier release left under the data home's `trust/` is moved only as a regular file with one name, never through a link planted there, and with no earlier record an empty one is written at the new location, so a file planted at the old one later is never imported | `backend/decisions.py`, `backend/_host.py`, `tests/test_routes_decision_ledger.py` |
+| kirodotdev/KiroCrew#30091, kirodotdev/KiroCrew#31863, kirodotdev/KiroCrew#36019 (tests only, for this app) | `tests/test_repository_duplicate.py`, `tests/test_spec_builder_routes_coverage_workers.py`, `tests/test_routes_delete.py`, `backend/orchestration/decision_outbox.py` (a comment) |
+
+The rest of kirodotdev/KiroCrew#30091 moves the built-in's cases of core tests into
+the built-in's own suite; `tests/test_host_cases_ported.py` already carries them.
+The suite's Kiro Crew test dependency moves to `af94fac51f` with these, so the new
+host names resolve on the host it runs against.
 
 ## UI
 

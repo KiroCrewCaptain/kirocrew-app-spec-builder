@@ -106,6 +106,7 @@ class _IdleSlot:
     def __init__(self) -> None:
         self.task = None
         self.rows: list[tuple] = []
+        self._deferred_notes: list[dict] = []
 
     def append(self, role, content, meta=None):
         self.rows.append((role, content, meta))
