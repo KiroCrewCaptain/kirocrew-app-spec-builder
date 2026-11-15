@@ -300,13 +300,20 @@ var specApi = {
 		}
 		return detail;
 	},
-	message: (name, text, id) => req("/specs/" + enc(name) + "/message", {
-		method: "POST",
-		body: JSON.stringify({
-			text,
-			...identity(id)
-		})
-	}),
+	message: (name, text, id, meta) => {
+		const sentMeta = {
+			...meta?.pastes?.length ? { pastes: meta.pastes } : {},
+			...typeof meta?.sendId === "string" ? { sendId: meta.sendId } : {}
+		};
+		return req("/specs/" + enc(name) + "/message", {
+			method: "POST",
+			body: JSON.stringify({
+				text,
+				...identity(id),
+				...Object.keys(sentMeta).length ? { meta: sentMeta } : {}
+			})
+		});
+	},
 	answerDecision: (name, decisionId, option, text, id) => req("/specs/" + enc(name) + "/message", {
 		method: "POST",
 		body: JSON.stringify({
@@ -861,15 +868,16 @@ var inputStyle = {
 *  Delegates to the shared component so theme tokens, focus ring, disabled
 *  state and active-press feedback stay identical to the rest of the
 *  dashboard; only the pill radius is app-specific. */
-function Btn$1({ label, onClick, primary, danger, disabled, title, big, ariaLabel, nowrap }) {
+function Btn$1({ label, onClick, primary, danger, disabled, busy, title, big, ariaLabel, nowrap }) {
 	return /* @__PURE__ */ jsx(Btn, {
-		onClick,
+		onClick: busy ? void 0 : onClick,
 		disabled,
+		"aria-disabled": busy || void 0,
 		title,
 		primary,
 		danger,
 		"aria-label": ariaLabel,
-		className: cn("rounded-full", big && "px-6 py-2 text-sm", nowrap && "whitespace-nowrap shrink-0"),
+		className: cn("rounded-full", big && "px-6 py-2 text-sm", nowrap && "whitespace-nowrap shrink-0", busy && "cursor-not-allowed active:scale-100", busy && (primary ? "bg-bg-hover hover:bg-bg-hover text-muted border-transparent shadow-none hover:shadow-none opacity-60" : danger ? "hover:text-danger hover:border-border hover:bg-transparent opacity-30" : "hover:border-border hover:bg-transparent opacity-30")),
 		children: label
 	});
 }
@@ -1612,7 +1620,7 @@ function TaskList({ tasks, progress, pendingIndex, busy, onRun }) {
 								" ",
 								pending ? i18nT("apps.specBuilder.components.taskList.starting") : i18nT("apps.specBuilder.components.taskList.run")
 							] }),
-							disabled: busy || pendingIndex !== null,
+							busy: busy || pendingIndex !== null,
 							ariaLabel: i18nT("apps.specBuilder.components.taskList.run_task", { task: task.text }),
 							title: busy ? i18nT("apps.specBuilder.components.taskList.pause_the_build_first") : i18nT("apps.specBuilder.components.taskList.run_only_this_task_and_stop"),
 							onClick: () => onRun(task)
@@ -2240,7 +2248,7 @@ function SpecDetail({ name, setErr, onDeleted, onDuplicated }) {
 		}
 	});
 	const messageMutation = useMutation({
-		mutationFn: (msg) => specApi.message(name, msg, specId()),
+		mutationFn: ({ msg, meta }) => specApi.message(name, msg, specId(), meta),
 		onMutate: () => {
 			lastSendAt.current = Date.now();
 		},
@@ -2321,7 +2329,7 @@ function SpecDetail({ name, setErr, onDeleted, onDuplicated }) {
 				phase,
 				hash
 			});
-			await messageMutation.mutateAsync(a.msg);
+			await messageMutation.mutateAsync({ msg: a.msg });
 			setApproved(phase);
 			setTab(a.target);
 		} catch {} finally {
@@ -2352,7 +2360,7 @@ function SpecDetail({ name, setErr, onDeleted, onDuplicated }) {
 			});
 		}
 		try {
-			await messageMutation.mutateAsync(msg);
+			await messageMutation.mutateAsync({ msg });
 			setComments([]);
 		} catch {} finally {
 			setSendingAll(false);
@@ -2386,6 +2394,7 @@ function SpecDetail({ name, setErr, onDeleted, onDuplicated }) {
 		const waiting = approved === detail.phase;
 		const hasReviewHash = !!detail.docs?.[detail.phase + ".md"]?.hash;
 		const reviewingPhase = tab === detail.phase;
+		const approveBusy = advancing || messageMutation.isPending || waiting;
 		return /* @__PURE__ */ jsx(Btn$1, {
 			label: advancing ? i18nT("apps.specBuilder.components.specDetail.sending") : waiting ? i18nT(a.pendingKey) : /* @__PURE__ */ jsxs(Fragment, { children: [
 				/* @__PURE__ */ jsx(Play, { className: "lucide-inline" }),
@@ -2394,7 +2403,8 @@ function SpecDetail({ name, setErr, onDeleted, onDuplicated }) {
 			] }),
 			primary: !waiting,
 			nowrap: true,
-			disabled: advancing || messageMutation.isPending || waiting || !hasReviewHash || !reviewingPhase,
+			busy: approveBusy,
+			disabled: !approveBusy && (!hasReviewHash || !reviewingPhase),
 			title: !hasReviewHash ? i18nT("apps.specBuilder.components.docView.nothing_here_yet") : waiting ? i18nT("apps.specBuilder.components.specDetail.the_agent_is_writing_the_next_document") : i18nT("apps.specBuilder.components.specDetail.tells_the_agent_this_phase_is_approved_and_to_mo"),
 			onClick: () => {
 				advance();
@@ -2407,7 +2417,7 @@ function SpecDetail({ name, setErr, onDeleted, onDuplicated }) {
 			stopMutation.isPending ? i18nT("apps.specBuilder.components.specDetail.pausing") : i18nT("apps.specBuilder.components.specDetail.pause")
 		] }),
 		danger: true,
-		disabled: stopMutation.isPending,
+		busy: stopMutation.isPending,
 		onClick: stop
 	}) : hasTasks && /* @__PURE__ */ jsx(Btn$1, {
 		label: /* @__PURE__ */ jsxs(Fragment, { children: [
@@ -2416,7 +2426,7 @@ function SpecDetail({ name, setErr, onDeleted, onDuplicated }) {
 			executeMutation.isPending ? i18nT("apps.specBuilder.components.specDetail.starting") : i18nT("apps.specBuilder.components.specDetail.start_building")
 		] }),
 		primary: true,
-		disabled: executeMutation.isPending,
+		busy: executeMutation.isPending,
 		title: i18nT("apps.specBuilder.components.specDetail.an_agent_will_work_through_the_task_list"),
 		onClick: execute
 	})] });
@@ -2645,7 +2655,10 @@ function SpecDetail({ name, setErr, onDeleted, onDuplicated }) {
 						children: detail ? /* @__PURE__ */ jsx(ChatColumn, {
 							name,
 							slotKey: detail.slot_key,
-							onSend: messageMutation.mutateAsync
+							onSend: (msg, meta) => messageMutation.mutateAsync({
+								msg,
+								meta
+							})
 						}) : /* @__PURE__ */ jsx(ChatColumnSkeleton, {})
 					})
 				]
@@ -2712,7 +2725,7 @@ function SpecDetail({ name, setErr, onDeleted, onDuplicated }) {
 										i18nT("apps.specBuilder.components.specDetail.send_all_to_agent")
 									] }),
 									primary: true,
-									disabled: sendingAll,
+									busy: sendingAll,
 									onClick: sendAll
 								})
 							]
@@ -2828,12 +2841,13 @@ function SpecDetail({ name, setErr, onDeleted, onDuplicated }) {
 				maxWidth: 440,
 				footer: /* @__PURE__ */ jsxs(Fragment, { children: [/* @__PURE__ */ jsx(Btn$1, {
 					label: i18nT("apps.specBuilder.components.specDetail.cancel"),
-					disabled: deleteMutation.isPending,
+					busy: deleteMutation.isPending,
 					onClick: () => setPendingRemove(null)
 				}), /* @__PURE__ */ jsx(Btn$1, {
 					label: deleteMutation.isPending ? i18nT("apps.specBuilder.components.specDetail.removing") : i18nT("apps.specBuilder.components.specDetail.delete_this_spec"),
 					danger: true,
-					disabled: deleteMutation.isPending || !pendingRemove,
+					busy: deleteMutation.isPending,
+					disabled: !pendingRemove,
 					onClick: () => {
 						if (pendingRemove) deleteMutation.mutate(pendingRemove);
 					}
@@ -3460,7 +3474,8 @@ function NewSpecView({ onCancel, onCreated, setErr, onSettings }) {
 						label: busy ? i18nT("apps.specBuilder.components.newSpecView.starting") : i18nT("apps.specBuilder.components.newSpecView.start_the_conversation"),
 						primary: true,
 						big: true,
-						disabled: busy || !ready,
+						busy,
+						disabled: !ready,
 						onClick: create
 					}), /* @__PURE__ */ jsx(Btn$1, {
 						label: i18nT("apps.specBuilder.components.newSpecView.never_mind"),
@@ -3556,12 +3571,13 @@ function SettingsModal({ onClose }) {
 		maxWidth: 520,
 		footer: /* @__PURE__ */ jsxs(Fragment, { children: [/* @__PURE__ */ jsx(Btn$1, {
 			label: i18nT("apps.specBuilder.components.settingsModal.cancel"),
-			disabled: busy,
+			busy,
 			onClick: onClose
 		}), /* @__PURE__ */ jsx(Btn$1, {
 			label: busy ? i18nT("apps.specBuilder.components.settingsModal.saving") : i18nT("apps.specBuilder.components.settingsModal.save"),
 			primary: true,
-			disabled: busy || unloaded,
+			busy,
+			disabled: unloaded,
 			onClick: save
 		})] }),
 		children: [

@@ -63,9 +63,20 @@ declare module '@kirocrew/app-sdk' {
   export type NumberOptions = Omit<Intl.NumberFormatOptions, 'localeMatcher'>
   export type DateOptions = Omit<Intl.DateTimeFormatOptions, 'localeMatcher'>
 
+  /** A collapsed paste the composer expanded into the message text. */
+  export interface PasteBlock {
+    id: string
+    seq: number
+    lines: number
+    content: string
+  }
+
   /** The meta every host `onSend` send carries. */
   export interface ChatEmbedSendMeta {
+    /** This send's client-minted id, which the embed reconciles a send by. */
     sendId?: string
+    /** The collapsed pastes the message expanded; they fold back into their chips. */
+    pastes?: PasteBlock[]
     [key: string]: unknown
   }
 
