@@ -13,7 +13,7 @@ import type { ChatEmbedSendMeta } from '@kirocrew/app-sdk'
 const API = '/api/apps/spec-builder'
 
 /** Shown in the rail footer: app.json's version. */
-export const APP_VERSION = '0.1.0'
+export const APP_VERSION = '0.1.1'
 
 // ── domain types ──────────────────────────────────────────────────────────
 
