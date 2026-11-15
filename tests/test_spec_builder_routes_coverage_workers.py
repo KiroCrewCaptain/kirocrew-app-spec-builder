@@ -30,6 +30,7 @@ from tests.spec_builder_routes_coverage_helpers import (
 )
 
 from tests.routes_facade import routes as r
+from kiro_crew.testing.synthetic_credentials import github_classic
 
 # pytest resolves a fixture in the requesting test's module, so each shared
 # fixture this module uses is bound here by name.
@@ -414,8 +415,9 @@ class TestEnsureWorkerSlot:
         every downstream ``logger.warning(..., name, ...)`` in production code
         as clear-text secret logging (10 false alerts on unchanged lines).
         """
-        # fails the grammar; the 64-char cut lands 8 chars into the 20-char key
-        name = "x" * 56 + "AKIAIOSFODNN7EXAMPLE" + " tail"
+        # fails the grammar; the 64-char cut lands 8 chars into the token (a
+        # GitHub token: an AWS key ID is an identifier the redactor keeps visible)
+        name = "x" * 56 + github_classic(seed=71) + " tail"
         state = _State()
         assert await r._ensure_worker_slot(state, name, _entry(tmp_path)) is None
         denied = [
@@ -424,7 +426,7 @@ class TestEnsureWorkerSlot:
             if c.kwargs["operation"] == "spec-builder.spec_slot_name_denied"
         ]
         assert denied, "the denial must still be audited"
-        assert all("AKIA" not in res for res in denied)
+        assert all(github_classic(seed=71)[:8] not in res for res in denied)
 
     @pytest.mark.asyncio
     async def test_a_cold_slot_is_created_scoped_and_titled(self, tmp_path):
@@ -698,6 +700,25 @@ class TestTeardownWorkerSlot:
         ]
         assert "spec_slot_archive_failed" in ops
 
+    @pytest.mark.asyncio
+    async def test_a_failed_archive_keeps_a_slot_minted_under_the_key_after_the_pop(
+        self, _quiet_sel
+    ):
+        slot = _Slot("spec-builder-demo")
+        minted = _Slot("spec-builder-demo")
+        state = _State(**{"spec-builder-demo": slot})
+
+        async def _mint_then_fail(*_a, **_kw):
+            state._slots["spec-builder-demo"] = minted
+            raise OSError("disk full")
+
+        with mock.patch(
+            "kiro_crew.dashboard.chat_persistence.save_slot_off_loop",
+            mock.AsyncMock(side_effect=_mint_then_fail),
+        ):
+            assert await r._teardown_worker_slot(state, "demo", require_archive=True) is False
+        assert state._slots["spec-builder-demo"] is minted
+
 
 class TestHaltActiveTurn:
     @pytest.mark.asyncio
@@ -827,13 +848,14 @@ class TestSerializeMessages:
         ``secret``-named variable, which would trip CodeQL's name-based
         sensitive-source heuristic on this real call path.
         """
-        # cut lands 8 chars into the fabricated 20-char key
-        first = "x" * 192 + "AKIAIOSFODNN7EXAMPLE" + " trailing"
+        # cut lands 8 chars into the fabricated token (a GitHub token: an AWS
+        # key ID is an identifier the redactor keeps visible)
+        first = "x" * 192 + github_classic(seed=72) + " trailing"
         slot = _Slot("spec-builder-demo")
         slot.messages = [{"role": "tool", "content": first + "\nmore", "ts": "1"}]
         state = _State(**{"spec-builder-demo": slot})
         out = await r._serialize_messages(state, "spec-builder-demo")
-        assert "AKIA" not in out[0]["content"]
+        assert github_classic(seed=72)[:8] not in out[0]["content"]
         assert len(out[0]["content"]) <= 200
 
     @pytest.mark.asyncio
@@ -934,6 +956,41 @@ class TestDispatchTurn:
             await slot.task
         assert seen == {"state": state, "slot": slot}
 
+    @pytest.mark.asyncio
+    async def test_a_restored_hold_is_delivered_above_the_user_row(self):
+        # A note a restart left held on this idle slot lands before the turn's row.
+        slot = _Slot("spec-builder-demo")
+        slot._deferred_notes = [{"role": "system", "content": "held note"}]
+        slot.turn_running = False  # type: ignore[attr-defined]
+
+        def _flush() -> None:
+            slot.messages.extend(slot._deferred_notes)
+            slot._deferred_notes = []
+
+        slot.flush_deferred_notes = _flush  # type: ignore[attr-defined]
+        state = _State(**{"spec-builder-demo": slot})
+        with mock.patch("kiro_crew.dashboard.chat_runner._run_chat", mock.AsyncMock()):
+            r._dispatch_turn(state, slot, "do the thing")
+            # flake-ok: awaits the turn task _dispatch_turn started above on a mocked _run_chat
+            await slot.task
+        assert [m["content"] for m in slot.messages] == ["held note", "do the thing"]
+
+    @pytest.mark.asyncio
+    async def test_a_gateway_without_restored_holds_still_dispatches(self, monkeypatch):
+        slot = _Slot("spec-builder-demo")
+        state = _State(**{"spec-builder-demo": slot})
+        real = r._host._host_attr
+        monkeypatch.setattr(
+            r._host,
+            "_host_attr",
+            lambda m, n: None if n == "flush_restored_hold" else real(m, n),
+        )
+        with mock.patch("kiro_crew.dashboard.chat_runner._run_chat", mock.AsyncMock()):
+            r._dispatch_turn(state, slot, "do the thing")
+            # flake-ok: awaits the turn task _dispatch_turn started above on a mocked _run_chat
+            await slot.task
+        assert [m["content"] for m in slot.messages] == ["do the thing"]
+
     def test_a_busy_slot_queues_the_turn_and_shows_it_redacted(self):
         slot = _Slot("spec-builder-demo", running=True)
         state = _State(**{"spec-builder-demo": slot})
@@ -944,6 +1001,15 @@ class TestDispatchTurn:
         assert slot.messages[0]["role"] == "queued"
         assert CRED_NAME not in slot.messages[0]["content"]
         assert state.pushes == 1
+
+    def test_a_busy_slot_queues_the_message_meta_with_the_turn(self):
+        # The drain stores the queued entry's meta on the user row: the paste chip.
+        slot = _Slot("spec-builder-demo", running=True)
+        slot.queue_append = mock.Mock()  # type: ignore[method-assign]
+        state = _State(**{"spec-builder-demo": slot})
+        pastes = [{"id": "p1", "seq": 1, "lines": 4, "content": "a\nb\nc\nd"}]
+        r._dispatch_turn(state, slot, "look", message_meta={"pastes": pastes})
+        assert slot.queue_append.call_args.kwargs["meta"]["pastes"] == pastes
 
     def test_a_slot_that_cannot_queue_or_echo_is_tolerated(self):
         slot = _Slot("spec-builder-demo", running=True)

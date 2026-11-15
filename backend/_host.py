@@ -99,6 +99,7 @@ HOST_FUNCTIONS: dict[str, tuple[str, ...]] = {
         "IS_MACOS",
         "IS_WINDOWS",
         "RENAME_NOREPLACE_AVAILABLE",
+        "open_file_no_reparse",
         "rename_noreplace",
         "strip_extended_length_prefix",
     ),
@@ -122,6 +123,8 @@ HOST_FUNCTIONS: dict[str, tuple[str, ...]] = {
     "kiro_crew.dashboard.session_control": ("containment_meta",),
     "kiro_crew.dashboard.chat_runner": ("_run_chat", "_start_next_queued_turn"),
     "kiro_crew.dashboard.turn_dispatch": ("bounded_chat_turn",),
+    "kiro_crew.dashboard.slot_buffers": ("flush_restored_hold",),
+    "kiro_crew.dashboard.chat_delivery": ("normalize_send_id",),
     "kiro_crew.autonudge": ("AutoNudgeService", "get_instance"),
     "kiro_crew.autonudge_authz": ("authorize_and_add_nudge",),
     "kiro_crew.dashboard.handlers": ("api_models",),
@@ -427,6 +430,17 @@ strip_extended_length_prefix: Callable[[str], str] = _resolve(
 )
 
 
+def _no_open_no_reparse(path: Any, *args: Any, **kwargs: Any) -> int:
+    raise OSError("opening a file without following a link is not available on this gateway")
+
+
+#: Opens a regular file for reading, refusing a link at its final name. A gateway
+#: without it refuses the open, so nothing is read through a link.
+open_file_no_reparse: Callable[..., int] = _resolve(
+    "kiro_crew.platform_compat", "open_file_no_reparse", _no_open_no_reparse
+)
+
+
 def _always_sensitive(path: str) -> bool:
     """Fail closed when path sensitivity cannot be determined."""
     return True
@@ -465,6 +479,18 @@ sandboxed_spawn_argv: Callable[..., Any] | None = _host_attr(
 )
 shielded_prepare_off_loop: Callable[..., Any] | None = _host_attr(
     "kiro_crew.sandbox", "shielded_prepare_off_loop"
+)
+
+
+def _no_send_id(value: object) -> None:
+    """Stand-in: with no host check, a client send id is treated as absent (an old client)."""
+    return None
+
+
+#: The host's check of a client send-correlation id (shape, then no credential in
+#: it). Without it the id is dropped, never stored unchecked.
+normalize_send_id: Callable[[object], str | None] = _resolve(
+    "kiro_crew.dashboard.chat_delivery", "normalize_send_id", _no_send_id
 )
 
 #: The host's chat-turn ceiling, for a gateway without ``bounded_chat_turn``.

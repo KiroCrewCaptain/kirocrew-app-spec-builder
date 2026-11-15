@@ -5,11 +5,20 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import stat
 import threading
 from pathlib import Path
 from typing import Any
 
-from ._host import atomic_write, bound, config_dir, readonly_dirs_seam, sdk_level
+from ._host import (
+    atomic_write,
+    bound,
+    config_dir,
+    open_file_no_reparse,
+    readonly_dirs_seam,
+    sdk_level,
+)
 from .parsers import (
     _MAX_DECISION_PROMPT,
     _clean_str,
@@ -89,27 +98,44 @@ def _legacy_decisions_path() -> Path | None:
 
 
 def _move_legacy_decisions(path: Path) -> str | None:
-    """Move the built-in's record to *path* when *path* is absent. BLOCKING, under the lock.
+    """Settle the record at *path* once, while *path* is absent. BLOCKING, under the lock.
 
-    Returns the record's text (from wherever it now is), or ``None`` when there is no
-    earlier record. The copy is written first and the old file removed after, so a
-    failure at either step keeps every answer: a failed write leaves the old file to be
-    read again next time, and a failed removal leaves a stale copy nothing reads once
-    the new one exists. Raises ``OSError`` or ``UnicodeError`` when the old record cannot
-    be read, which the caller reports as an unusable store.
+    Moves the built-in's record to *path*, or writes an empty record there when there is
+    none, so the old location is read at most until the first read that finds *path*
+    absent. Agents' shells can write the old ``trust/`` directory, so a file that
+    appears there afterwards must never be imported into the fenced record, and the old
+    record is read only as a regular file with one name: a link planted there would copy
+    its target, any file the gateway can read, into this agent-readable record.
+
+    Returns the earlier record's text, or ``None`` when there is none. The copy is
+    written first and the old file removed after, so a failure at either step keeps
+    every answer: a failed write leaves the old file to be read again next time, and a
+    failed removal leaves a stale copy nothing reads once the new one exists. Raises
+    ``OSError`` or ``UnicodeError`` when the old record cannot be read or is a link,
+    which the caller reports as an unusable store.
     """
     legacy = _legacy_decisions_path()
     if legacy is None:
         return None
+    raw: str | None = None
     try:
-        raw = legacy.read_text(encoding="utf-8")
+        fd = open_file_no_reparse(legacy, nonblocking=True)
     except FileNotFoundError:
-        return None
+        pass
+    else:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            os.close(fd)
+            raise OSError(f"{legacy} is not a regular file with one name")
+        with os.fdopen(fd, encoding="utf-8") as handle:
+            raw = handle.read()
     try:
-        atomic_write(path, raw)
+        atomic_write(path, "{}" if raw is None else raw)
     except OSError:
-        logger.warning("could not move the decision record from %s to %s", legacy, path)
+        logger.warning("could not settle the decision record at %s", path)
         return raw
+    if raw is None:
+        return None
     try:
         legacy.unlink()
     except OSError:

@@ -95,9 +95,19 @@ def test_the_data_home_is_derived_from_the_apps_data_directory(bound_ctx, _isola
     ):
         # The built-in's locations: an existing user's specs and answers are found.
         assert repository._state_dir() == _isolated_home / "workspace" / "spec-builder"
-        assert decisions._decisions_path() == (
-            _isolated_home / "trust" / "spec-builder-decisions.json"
-        )
+        with mock.patch.object(decisions, "readonly_dirs_seam", lambda: False):
+            assert decisions._decisions_path() == (
+                _isolated_home / "trust" / "spec-builder-decisions.json"
+            )
+        # A host that fences the declared ``trust/`` keeps the record in the app's data
+        # directory, the one ``ctx.data_dir`` names.
+        with (
+            mock.patch.object(decisions, "readonly_dirs_seam", lambda: True),
+            mock.patch.object(decisions, "sdk_level", lambda _ctx: 7),
+        ):
+            assert decisions._decisions_path() == (
+                Path(bound_ctx.data_dir) / "trust" / "spec-builder-decisions.json"
+            )
 
 
 def test_no_context_is_refused():

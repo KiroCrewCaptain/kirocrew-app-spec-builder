@@ -436,7 +436,7 @@ def _dispatch_turn(
     slot: Any,
     message: str,
     *,
-    message_meta: dict[str, str] | None = None,
+    message_meta: dict[str, Any] | None = None,
     append_user: bool = True,
     directive_user_origin: bool = False,
     message_is_typed: bool = True,
@@ -468,9 +468,11 @@ def _dispatch_turn(
             containment_meta = _host.require(
                 "kiro_crew.dashboard.session_control", "containment_meta"
             )
+            # The drain stores the entry's meta on the user row, so a queued
+            # message keeps its `message_meta` (pastes) like a dispatched one.
             slot.queue_append(
                 message,
-                meta=containment_meta(state, slot),
+                meta={**(message_meta or {}), **containment_meta(state, slot)},
                 directive_user_origin=directive_user_origin,
             )
         except Exception:
@@ -492,8 +494,15 @@ def _dispatch_turn(
     # Timeout resolution runs off-loop inside the task, before the chat coroutine
     # starts. A gateway without it gets the plain host ceiling.
     bounded_chat_turn = _host._host_attr("kiro_crew.dashboard.turn_dispatch", "bounded_chat_turn")
+    # A gateway without it keeps no restored hold, so there is nothing to deliver.
+    flush_restored_hold = _host._host_attr("kiro_crew.dashboard.slot_buffers", "flush_restored_hold")
 
     if append_user:
+        # A hold a restart restored into this idle slot is owed to this turn,
+        # above its user row. A replay whose row is already written keeps the
+        # hold for its cycle end: a flush now would land under that row.
+        if flush_restored_hold is not None:
+            flush_restored_hold(slot, logger=logger)
         if message_meta:
             slot.append("user", message, meta=message_meta)
         else:

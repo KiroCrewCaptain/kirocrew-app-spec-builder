@@ -335,6 +335,103 @@ def test_an_unreadable_old_record_is_an_unusable_store(tmp_path, monkeypatch):
         assert routes._read_decisions() == ({}, False)
 
 
+def test_a_record_planted_at_the_old_location_later_is_never_imported(tmp_path, monkeypatch):
+    """The old location is read once: with no earlier record, an empty one is settled.
+
+    Agents' shells can write the data home's ``trust/``, so a file that appears there
+    after the first read must not land in the fenced record as forged answers."""
+    legacy, path = _level_seven_home(monkeypatch, tmp_path)
+
+    with routes._DECISIONS_LOCK:
+        assert routes._read_decisions() == ({}, True)
+    assert json.loads(path.read_text(encoding="utf-8")) == {}
+
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text(json.dumps({"/specs/s": {"answers": {"q": "forged"}}}), encoding="utf-8")
+    with routes._DECISIONS_LOCK:
+        assert routes._read_decisions() == ({}, True)
+    assert json.loads(path.read_text(encoding="utf-8")) == {}
+
+
+def test_an_older_host_settles_nothing_at_the_declared_directory(tmp_path, monkeypatch):
+    """Below the seam the record stays at the keystone, so no empty record is written."""
+    from backend import decisions
+
+    monkeypatch.setattr(routes, "_DECISIONS_PATH", None)
+    monkeypatch.setattr(decisions, "config_dir", lambda: tmp_path)
+    monkeypatch.setattr(decisions, "sdk_level", lambda _ctx: decisions.READONLY_DIRS_SDK_LEVEL - 1)
+
+    with routes._DECISIONS_LOCK:
+        assert routes._read_decisions() == ({}, True)
+    assert not (tmp_path / "apps").exists()
+    assert not (tmp_path / "trust").exists()
+
+
+@pytest.mark.parametrize("plant", ["symlink", "hardlink"])
+def test_a_link_planted_at_the_old_location_never_copies_its_target(tmp_path, monkeypatch, plant):
+    """Agents' shells can plant a link in the data home's ``trust/``: the move reads only a
+    regular file with one name, so a file agents cannot read never reaches the record.
+
+    On Windows the symlink case plants a junction instead: a file symlink needs a
+    privilege the runner may lack, and a junction is the reparse point any shell can
+    plant there, refused by the same no-reparse open."""
+    from kiro_crew.testing.links import make_dir_link
+
+    legacy, path = _level_seven_home(monkeypatch, tmp_path)
+    hidden = tmp_path / "hidden.env"
+    hidden.write_text("TOKEN=not-for-agents\n", encoding="utf-8")
+    legacy.parent.mkdir(parents=True)
+    if plant == "symlink" and os.name == "nt":
+        make_dir_link(legacy, tmp_path)
+    else:
+        (os.symlink if plant == "symlink" else os.link)(hidden, legacy)
+
+    with routes._DECISIONS_LOCK:
+        assert routes._read_decisions() == ({}, False)
+    assert not path.exists()
+
+
+def test_a_directory_planted_at_the_old_location_leaves_no_descriptor_open(tmp_path, monkeypatch):
+    """A refused old record keeps the store unusable and every read retries it, so the
+    refusal must close what it opened or each read leaks one descriptor."""
+    from backend import decisions
+
+    legacy, _path = _level_seven_home(monkeypatch, tmp_path)
+    legacy.mkdir(parents=True)
+    opened: list[int] = []
+    real_open = decisions.open_file_no_reparse
+
+    def recording_open(*args, **kwargs):
+        opened.append(real_open(*args, **kwargs))
+        return opened[-1]
+
+    monkeypatch.setattr(decisions, "open_file_no_reparse", recording_open)
+    with routes._DECISIONS_LOCK:
+        assert routes._read_decisions() == ({}, False)
+    planted = os.stat(legacy)
+    for fd in opened:
+        try:
+            info = os.fstat(fd)
+        except OSError:
+            continue  # closed
+        assert (info.st_dev, info.st_ino) != (planted.st_dev, planted.st_ino), "fd leaked"
+
+
+def test_a_gateway_without_the_no_reparse_open_refuses_the_old_record(tmp_path, monkeypatch):
+    """With no host open that refuses a link, the old record is never read: the store
+    is unusable rather than reading a file that may be a planted link."""
+    from backend import _host, decisions
+
+    legacy, path = _level_seven_home(monkeypatch, tmp_path)
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text(json.dumps({"/specs/s": {}}), encoding="utf-8")
+    monkeypatch.setattr(decisions, "open_file_no_reparse", _host._no_open_no_reparse)
+
+    with routes._DECISIONS_LOCK:
+        assert routes._read_decisions() == ({}, False)
+    assert legacy.exists() and not path.exists()
+
+
 @pytest.mark.asyncio
 async def test_a_forged_ledger_for_another_spec_dir_is_ignored(tmp_path, monkeypatch):
     """A record is scoped to the spec_dir it was written for. A delete leaves the
