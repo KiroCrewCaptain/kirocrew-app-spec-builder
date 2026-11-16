@@ -33,6 +33,7 @@ from tests.routes_helpers import (  # noqa: F401
     _redirect_state,
     _slot_stub,
 )
+from tests.synthetic_credentials_helpers import synth
 from harness import mount
 
 
@@ -383,7 +384,7 @@ async def test_a_recorded_answer_is_redacted_on_egress(tmp_path, monkeypatch):
     """index.json is agent-writable, so the ledger is untrusted input like every
     other field -- and the overlay bypasses the state file's own scrub."""
     _redirect_state(monkeypatch, tmp_path)
-    secret = "glpat-IOSFODNN7EXAMPLE"
+    secret = "glpat-" + synth(20, seed=125)  # a 20-character body is the token
     spec_dir, _slot_key = _decision_spec(
         tmp_path,
         state={"decisions": [{"id": "d", "title": "Which key", "answer": None}]},

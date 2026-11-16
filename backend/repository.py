@@ -27,6 +27,7 @@ from .parsers import (
     _entry_is_usable,
     _owns_slot_key,
     _redact,
+    _refuses,
     _usable_name,
     is_sensitive_path,
 )
@@ -202,7 +203,7 @@ def _load_settings() -> dict:
         # planted here would ride the stamp to the browser. Degrade to inherit;
         # this also fails closed when the security module is unavailable, same
         # as _redact itself. The write path rejects the same shape with a 400.
-        if model and _redact(model) != model:
+        if model and _refuses(model):
             model = ""
         data = {**data, "model": model}
     return data

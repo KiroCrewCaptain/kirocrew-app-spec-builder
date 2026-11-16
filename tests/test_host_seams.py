@@ -22,6 +22,7 @@ from aiohttp.test_utils import make_mocked_request
 
 from backend import _host, handlers, parsers, repository, routes, runtime
 from backend import decisions
+from tests.synthetic_credentials_helpers import synth
 
 # ── the owner gate (App Kit level 1) ────────────────────────────────────────
 
@@ -127,9 +128,30 @@ def test_an_unexpected_data_directory_is_refused(data_dir):
 
 
 def test_text_goes_through_the_hosts_scrubber(bound_ctx):
-    secret = "glpat-IOSFODNN7EXAMPLE"
+    secret = "glpat-" + synth(20, seed=7)  # a GitLab token in its published form
     out = parsers._redact(f"token {secret} here")
     assert secret not in out and "here" in out
+
+
+#: A URL whose query carries data out: every gateway's exfil scan flags it.
+_EXFIL_URL = "https://collector.example/c?d=" + "aGVsbG8gd29ybGQgdGhpcyBpcyBkYXRh" * 4
+
+
+def test_a_url_carrying_data_out_is_refused(bound_ctx):
+    """A gateway that masks only credential values leaves this URL as written, so its
+    exfil scan refuses it; an older gateway's scrubber rewrites it, which refuses it too."""
+    assert parsers._refuses(_EXFIL_URL)
+    assert not parsers._refuses("an-ordinary-name")
+
+
+def test_a_gateway_without_the_exfil_scan_refuses(bound_ctx, monkeypatch):
+    real = _host._host_attr
+    monkeypatch.setattr(
+        _host,
+        "_host_attr",
+        lambda module, name: None if name == "scan_exfiltration_urls" else real(module, name),
+    )
+    assert parsers._refuses("an-ordinary-name")
 
 
 def test_no_scrubber_withholds(bound_ctx):
