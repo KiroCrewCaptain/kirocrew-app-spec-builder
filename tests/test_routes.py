@@ -43,6 +43,7 @@ from tests.routes_helpers import (  # noqa: F401
     _redirect_state,
     _slot_stub,
 )
+from tests.synthetic_credentials_helpers import github_classic
 from harness import mount
 
 
@@ -309,7 +310,7 @@ def test_valid_name_rules():
 
 
 def test_redact_scrubs_credentials():
-    secret = "glpat-IOSFODNN7EXAMPLE"
+    secret = github_classic(seed=133)
     out = routes._redact(f"key is {secret} ok")
     assert secret not in out
 
@@ -322,7 +323,7 @@ async def test_spec_state_is_redacted_on_get(tmp_path, monkeypatch):
     # value — the GET handler must recursively scrub it before serving.
     spec_dir = tmp_path / "wd" / ".kiro" / "specs" / "demo"
     spec_dir.mkdir(parents=True)
-    secret = "glpat-IOSFODNN7EXAMPLE"
+    secret = github_classic(seed=133)
     (spec_dir / ".spec-state.json").write_text(
         json.dumps(
             {

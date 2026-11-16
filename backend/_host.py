@@ -103,7 +103,7 @@ HOST_FUNCTIONS: dict[str, tuple[str, ...]] = {
         "rename_noreplace",
         "strip_extended_length_prefix",
     ),
-    "kiro_crew.security": ("is_sensitive_path",),
+    "kiro_crew.security": ("is_sensitive_path", "scan_exfiltration_urls"),
     "kiro_crew.messaging.split": ("iter_fence_spans",),
     "kiro_crew.sel": ("sel",),
     "kiro_crew.hooks": ("safe_read_file_bytes_nolink",),
@@ -148,6 +148,7 @@ _CORE_NAMES: tuple[tuple[str, str], ...] = (
     ("kiro_crew.hooks", "safe_read_file_bytes_nolink"),
     ("kiro_crew.pinned_fs", "fd_real_path"),
     ("kiro_crew.security", "is_sensitive_path"),
+    ("kiro_crew.security", "scan_exfiltration_urls"),
 )
 
 
@@ -250,6 +251,26 @@ def scrub_text(text: str) -> str | None:
         return None
     out = getattr(result, "text", None)
     return out if isinstance(out, str) else None
+
+
+def exfil_flagged(text: str) -> bool:
+    """Whether the gateway's exfil scan flags a URL in *text*; ``True`` when it cannot tell.
+
+    A gateway that masks only credential values leaves a data-carrying URL as
+    written, so a refusal that compares the scrubbed text with its input would pass
+    one; the gateway's own scan (``kiro_crew.security.scan_exfiltration_urls``)
+    decides it too. An older gateway's scrubber rewrites such a URL, so the
+    comparison already refuses it there. Fails closed: a gateway without the scan,
+    or a scan that raises, flags the text.
+    """
+    scan = _host_attr("kiro_crew.security", "scan_exfiltration_urls")
+    if not callable(scan):
+        return True
+    try:
+        return bool(scan(text))
+    except Exception:  # noqa: BLE001 - fail closed: refuse, never pass unscanned
+        logger.warning("spec-builder: the exfil scan failed; refused")
+        return True
 
 
 def scrubber_available() -> bool:

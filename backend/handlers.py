@@ -54,6 +54,7 @@ from .parsers import (
     _normalize_spec_state,
     _numeric,
     _redact,
+    _refuses,
     _usable_name,
 )
 from .repository import (
@@ -256,7 +257,7 @@ async def _handle_put_settings(request: web.Request) -> web.Response:
         # would otherwise be persisted and ride the slot stamp to the browser raw
         # (slot.model is an id, not prose -- no downstream sink scrubs it). Fails
         # closed with _redact when the security module is unavailable.
-        if model and _redact(model) != model:
+        if model and _refuses(model):
             return web.json_response(
                 {"code": "model_invalid", "error": "model must be a model id"}, status=400
             )
