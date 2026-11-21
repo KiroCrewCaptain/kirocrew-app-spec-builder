@@ -23,6 +23,7 @@ from backend import _host, runtime
 from backend.orchestration import execution_state
 from tests.routes_facade import routes
 from tests.routes_helpers import _BASE, _make_client
+from tests.synthetic_credentials_helpers import github_classic
 
 APP = routes.APP_NAME
 
@@ -245,7 +246,7 @@ async def test_delete_archives_through_the_seam_and_reports_a_failed_save(seam, 
 
 @pytest.mark.asyncio
 async def test_the_transcript_is_read_through_the_seam_and_redacted(seam):
-    secret = "ghp_" + "a" * 36
+    secret = github_classic(seed=91)
     seam.rows = [
         {"role": "system", "content": "hidden"},
         {"role": "user", "content": f"token {secret}", "ts": "1"},

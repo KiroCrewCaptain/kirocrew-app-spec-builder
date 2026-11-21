@@ -81,6 +81,12 @@ def _redact(text: str) -> str:
     return _UNSCRUBBABLE if scrubbed is None else scrubbed
 
 
+def _refuses(text: str) -> bool:
+    """Whether a gate refuses *text*: ``_redact`` changes it, or the gateway's exfil scan
+    flags a URL in it (``_host.exfil_flagged``, which fails closed)."""
+    return _redact(text) != text or _host.exfil_flagged(text)
+
+
 def _redact_and_truncate(text: str, max_chars: int) -> str:
     """Scrub like ``_redact``, then truncate — never ``_redact(x[:n])``.
 
@@ -107,7 +113,7 @@ def _usable_name(name: str) -> bool:
     returns the key as `"name"`. Scrubbing it would produce a name that does not
     match the directory the entry points at, so the entry goes instead.
     """
-    return _valid_name(name) and _redact(name) == name
+    return _valid_name(name) and not _refuses(name)
 
 
 def _entry_is_usable(meta: dict) -> bool:
