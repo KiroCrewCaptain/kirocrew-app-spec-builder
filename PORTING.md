@@ -220,6 +220,7 @@ host names resolve on the host it runs against.
 | Release | What it carries |
 |---|---|
 | `0.1.1` | Every built-in fix above, the chat slot seam (`ctx.chat_slots`) and the decision record in the manifest-declared read-only `trust/`, both feature-detected. It needs App Kit seam level 7 on the host that adopts it (`minAppSdkLevel` 7), and the wheel copy moves to `0.1.1` with the pin |
+| `0.1.2` | kirodotdev/KiroCrew#37408: a gateway that masks only credential values inside a link leaves a URL that carries data out as written, so the settings model id (PUT and load) and `parsers._usable_name` now also ask the gateway's exfil scan (`_host.exfil_flagged`, `parsers._refuses`) and fail closed when the scan is missing or raises. Test fixtures use credentials in their published formats. Same `minAppSdkLevel` (7) |
 
 ## UI
 
