@@ -38,6 +38,7 @@ Nothing else in ``backend/`` names a ``kiro_crew`` module
 
 from __future__ import annotations
 
+import contextlib
 import importlib
 import logging
 import os
@@ -120,6 +121,7 @@ HOST_FUNCTIONS: dict[str, tuple[str, ...]] = {
         "save_slot_off_loop",
     ),
     "kiro_crew.dashboard.chat_utils": ("_history_key_for",),
+    "kiro_crew.dashboard.snapshot_commit": ("close_in_flight",),
     "kiro_crew.dashboard.session_control": ("containment_meta",),
     "kiro_crew.dashboard.chat_runner": ("_run_chat", "_start_next_queued_turn"),
     "kiro_crew.dashboard.turn_dispatch": ("bounded_chat_turn",),
@@ -535,6 +537,19 @@ def _compaction_unknown(sessions: Any, session_key: str) -> bool:
 
 compaction_in_flight: Callable[[Any, str], bool] = _resolve(
     "kiro_crew.session_lifecycle", "compaction_in_flight", _compaction_unknown
+)
+
+
+def _no_close_registry(state: Any, name: str, slot: Any) -> Any:
+    """Stand-in: register nothing. A tag deleted while the slot is popped can then
+    come back with a put-back slot, as on a gateway that has no registry at all."""
+    return contextlib.nullcontext()
+
+
+#: The host's registry of slots held out of ``state._slots`` that may be put back.
+#: A tag or folder delete strips the slots in it as it strips the live ones.
+close_in_flight: Callable[[Any, str, Any], Any] = _resolve(
+    "kiro_crew.dashboard.snapshot_commit", "close_in_flight", _no_close_registry
 )
 
 #: AutoNudge, for the execution loop. ``None`` when missing: Start build refuses.
