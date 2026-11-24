@@ -83,9 +83,15 @@ def _slot_identity_moved(name: str, slot_key: str) -> bool:
 
 
 async def _ensure_worker_slot(
-    state: Any, name: str, meta: dict, *, adopt_closed: bool = True
+    state: Any, name: str, meta: dict, *, adopt_closed: bool = True, scope: bool = True
 ) -> Any:
     """Materialize this spec's worker slot, SCOPED, and return it.
+
+    ``scope=False`` is the ownership-only read used when the spec's working directory
+    is gone: it applies the same foreign-slot refusal but never creates a slot and
+    never stamps ``project``/``model``/title. It returns this app's existing slot, or
+    ``None`` (nothing of ours, or a foreign owner -- the caller tells them apart by
+    whether ``state.get_slot`` still holds a slot under the key).
 
     The single place a spec slot comes into existence. It exists because
     ``get_or_create_slot`` only stamps ``app`` on NEWLY created slots, and
@@ -147,6 +153,8 @@ async def _ensure_worker_slot(
                 "spec slot %s is owned by %s — refusing to take it over", name, owner or "nobody"
             )
             return None
+        if not scope:
+            return existing
         slot = existing
         created = False
         if (slots := _host.chat_slots()) is not None:
@@ -157,6 +165,8 @@ async def _ensure_worker_slot(
             except PermissionError:
                 _audit("spec_slot_foreign_denied", f"{name}: opened elsewhere", outcome="denied")
                 return None
+    elif not scope:
+        return None
     elif (slots := _host.chat_slots()) is not None:
         try:
             slot, created = await slots.open(state, slot_key)
